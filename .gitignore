@@ -1,0 +1,14 @@
+*~
+.DS_Store
+ThumbsDB
+\#*#
+.#*
+*pyc
+doc/_build
+try
+log
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+log/
+*/log/
+.idea

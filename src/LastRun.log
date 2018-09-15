@@ -1,0 +1,22 @@
+0.0230 	WARNING 	pyo audio lib was requested but not loaded: ImportError('No module named pyolib._maps',)
+3.0879 	WARNING 	Monitor specification not found. Creating a temporary one...
+5.7321 	WARNING 	Couldn't measure a consistent frame rate.
+  - Is your graphics card set to sync to vertical blank?
+  - Are you running other processes on your computer?
+
+5.7533 	EXP 	Created window1 = Window(allowGUI=True, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', color=array([ 0.,  0.,  0.]), colorSpace='rgb', fullscr=UNKNOWN, gamma=None, kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x08230E50>, multiSample=False, name='window1', numSamples=2, pos=[-80, 62], screen=0, size=array([1440,  900]), stereo=False, units=u'norm', useFBO=False, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+5.7537 	WARNING 	Monitor specification not found. Creating a temporary one...
+8.1492 	WARNING 	Couldn't measure a consistent frame rate.
+  - Is your graphics card set to sync to vertical blank?
+  - Are you running other processes on your computer?
+
+8.1505 	EXP 	Created window1 = Window(allowGUI=True, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', color=array([ 0.,  0.,  0.]), colorSpace='rgb', fullscr=UNKNOWN, gamma=None, kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x0780FE50>, multiSample=False, name='window1', numSamples=2, pos=[-80, 62], screen=1, size=array([1440,  900]), stereo=False, units=u'norm', useFBO=False, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+8.1508 	WARNING 	Monitor specification not found. Creating a temporary one...
+8.1510 	WARNING 	Requested an unavailable screen number - using first available.
+10.5497 	WARNING 	Couldn't measure a consistent frame rate.
+  - Is your graphics card set to sync to vertical blank?
+  - Are you running other processes on your computer?
+
+10.5507 	EXP 	Created window1 = Window(allowGUI=True, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', color=array([ 0.,  0.,  0.]), colorSpace='rgb', fullscr=UNKNOWN, gamma=None, kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x07817AF0>, multiSample=False, name='window1', numSamples=2, pos=[-80, 62], screen=2, size=array([1440,  900]), stereo=False, units=u'norm', useFBO=False, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+10.6131 	EXP 	window1: mouseVisible = True
+10.6868 	EXP 	window1: mouseVisible = True

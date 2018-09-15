@@ -1,0 +1,10 @@
+Initial files for eeg-fmri-localizer, v2, that runs nicely with the Python Pyff + Psychopy Framework
+
+
+It utilizes a SI task (30% Stop Trials) according to Aron & Poldrack et al
+
+A Visual Checkerboard, a la Delgado et al.
+
+Auditory tunes, a la Pressaco et al.
+
+

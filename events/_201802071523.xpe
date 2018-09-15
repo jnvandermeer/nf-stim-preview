@@ -1,0 +1,7 @@
+#Expyriment 0.9.0 (Python 2.7.13), .xpe-file, coding: UTF-8
+#date: Wed Feb 07 2018 15:23:43
+#sha1: None
+#modules: 
+#display: size=(5520, 1080), window_mode=False, open_gl=2
+#os: ('Linux', 'tron', '4.14.15-1-ARCH', '#1 SMP PREEMPT Tue Jan 23 21:49:25 UTC 2018', 'x86_64', '')
+Time,Type,Event,Value,Detail,Detail2
