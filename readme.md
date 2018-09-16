@@ -1,6 +1,6 @@
-# chapter 1
+# NF Stimulus Presentation
 
-- test1
-- test2
+- Pyff - for transmission of data, starting/stopping remotely
+- Psychopy - for making our neurophysiology
 
 
