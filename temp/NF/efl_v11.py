@@ -722,10 +722,10 @@ def init_gng(G):
     # Obtain the Go Nogo Timing Parameters
     # for stop-signal task: read in the critucal timings from one of my 500 
     # OPTIMAL GLM Design specifications:
-    tmp_rand_number = random.randint(1,193)
+    tmp_rand_number = random.randint(1,6)
     
     
-    timingsfile='gngtimings/newparam_%d.txt' % tmp_rand_number
+    timingsfile='gngtimings/param_%d.txt' % tmp_rand_number
     #timingsfile='gngtimings/tmpFile.txt'
     
     # we do these checks throughout.
