@@ -726,6 +726,9 @@ def init_gng(G):
     
     
     timingsfile='gngtimings/newparam_%d.txt' % tmp_rand_number
+    
+    # log that, too.
+    logging.data('GNG SELECTED LOGFILE: %s' % timingsfile)
     #timingsfile='gngtimings/tmpFile.txt'
     
     # we do these checks throughout.
@@ -860,6 +863,10 @@ def handle_gonogo(G):
 
   
     if DO_GNG:
+        
+        G['eh'].send_message('gonogo_BEGIN')
+        
+        
         # yeah, do all kinds of init here.
         for trialNumber in range(len(G['S']['SSstopgo'])):
     
@@ -1236,9 +1243,11 @@ def handle_gonogo(G):
         except:
             print('something went wrong here.')
         
-        #print('this is the last one, I')
-
-    # print('this is the last one, II')
+    
+    
+    if DO_GNG:
+        G['eh'].send_message('gonogo_END')
+    
     
     # tell the visual to stop flipping, allowing visual to end their part of the async loop:
     G['S']['GNG_STOPPED'] = True
@@ -1345,9 +1354,9 @@ def handle_audio(G):
     
     currentTime=audioClock.getTime()
     
-    
-    logging.data('aud_BEGIN')
-    eh.send_message('aud_BEGIN')
+    if DO_AUDIO:
+        logging.data('aud_BEGIN')
+        eh.send_message('aud_BEGIN')
     # just before going in here -- LOG it.
     # log the beginning...
     
@@ -1407,9 +1416,9 @@ def handle_audio(G):
             
         yield From(asyncio.sleep(0))  # pass control to someone else, while this guy sleeps a bit.
             
-            
-    logging.data('aud_END')
-    eh.send_message('aud_END')
+    if DO_AUDIO:        
+        logging.data('aud_END')
+        eh.send_message('aud_END')
 
 
 
@@ -1499,6 +1508,8 @@ def handle_visual(G):
     # within this time, the stop signal task will (hopefully) finish.
     # OR... we can also just use a counter.
     
+    if DO_VISUAL:
+        eh.send_message('vis_BEGIN')
     
     # the visual task...
     while frameCounter < totFrames:
@@ -1514,9 +1525,6 @@ def handle_visual(G):
         frameIndex, visContents, markers = fd_with_markers[frameCounter]
         
         
-        
-        if frameIndex == 0:
-            eh.send_message('vis_BEGIN')
         
         
         frameCounter += 1
@@ -1578,8 +1586,8 @@ def handle_visual(G):
         yield From(asyncio.sleep(0))
         
 
-        
-    eh.send_message('vis_END')
+    if DO_VISUAL:   
+        eh.send_message('vis_END')
     
 
     extra_frame_counter=0
@@ -1825,10 +1833,13 @@ def instr_screen0(G):
     INSTR=G['v']['INSTR']
     eh=G['eh']
 
-    fstim=visual.TextStim(win, 'Please keep your left and right fingers on their corresponding buttons throughout the experiment.\n\nPress to continue with Eyes Open / Eyes Closed...',pos=(0.0, 0.0), height=0.12, units='norm')
+    fstim=visual.TextStim(win, 'Please keep your fingers on the buttons throughout the experiment.',pos=(0.0, 0.0), height=0.12, units='norm')
+    # fstim=visual.TextStim(win, 'Press to continue with Eyes Open / Eyes Closed...',pos=(0.0, 0.0), height=0.12, units='norm')
     contstim=visual.TextStim(win, 'Press to continue...',pos=(0.0, 0.90), height=0.08, units='norm')
+    contstim2=visual.TextStim(win, 'with Eyes Open / Eyes Closed...',pos=(0.0, 0.81), height=0.08, units='norm')
     fstim.draw()
     contstim.draw()
+    contstim2.draw()
     win.flip()
     event.waitKeys()
         
@@ -1885,7 +1896,7 @@ def eo_stim(G):
 
 def ec_stim(G):
     
-    
+    snd_endeyesclosed = sound.backend_pygame.SoundPygame(value=391*2,secs=0.8,loops=0)
     EYESCLOSED_TIME=G['v']['EYESCLOSED_TIME']
     win=G['win']
     eh=G['eh']
@@ -1909,7 +1920,7 @@ def ec_stim(G):
     
     
     eh.send_message('ec_END')
-    
+    snd_endeyesclosed.play()
     for i in range(5):
         win.color=[1, 1, 1]
         win.flip()

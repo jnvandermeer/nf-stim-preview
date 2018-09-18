@@ -5,6 +5,7 @@
 #%% window..
 # getting the window right:
 from psychopy import visual
+import numpy as np
 # getting the window
 win=visual.Window(size=(1400,900), fullscr=False, screen=0, allowGUI=True, winType='pyglet', waitBlanking=False)
 
@@ -16,7 +17,7 @@ def make_dashed(win, b, e, N, d):
     lines=[]
     b=(float(b[0]),float(b[1]))
     e=(float(e[0]),float(e[1]))
-    diff=(e[0]-b[0], e[1]-b[1])
+    # diff=(e[0]-b[0], e[1]-b[1])
     # print(diff/float(N)*d)
     # scaling:
     if b[0]==0 and e[0]==0:
@@ -60,7 +61,7 @@ arrowVert = [(-0.7071, -0.7071/arrowPinch), (0, -0.7071/arrowPinch),
               (0, 1),(0, 0.7071/arrowPinch), 
               (-0.7071, 0.7071/arrowPinch)]
 arrowup = visual.ShapeStim(win, vertices=arrowVert, fillColor='white', 
-                             size=stimSize/1.973, ori=-90, lineColor='white', autoLog=False)
+                             size=stimSize, ori=-90, lineColor='white', autoLog=False)
 
 # feedback 'cross' (blue)
 fa=.1;fb=1
@@ -74,9 +75,7 @@ fa=0.25;fb=1
 donotregVert = [(fa, fa),(fa, fb),(-fa, fb),(-fa, fa),(-fb, fa),(-fb, -fa),
                     (-fa, -fa),(-fa, -fb),(fa, -fb),(fa, -fa),(fb, -fa), (fb, fa)]
 donotreg = visual.ShapeStim(win, vertices=donotregVert, fillColor='white', 
-                             size=stimSize/2.5, ori=45, lineColor='white', autoLog=False)
-
-
+                             size=stimSize, ori=45, lineColor='white', autoLog=False)
 
 
 
@@ -98,9 +97,21 @@ nf_line = visual.ShapeStim(win, vertices=nf_vertices, closeShape=False, lineColo
 
 
 
+# the vertices for 'correct':
+vert_correct=np.loadtxt('stim/vert_correct.txt')
+st_correct_color='#5fd35f'
+st_correct = visual.ShapeStim(win, vertices=vert_correct, closeShape=True, size=stimSize, fillColor=st_correct_color, lineWidth =0, autoLog=False)
+
+vert_incorrect=np.loadtxt('stim/vert_incorrect.txt')
+st_incorrect_color='#eb2c00';
+st_incorrect = visual.ShapeStim(win, vertices=vert_incorrect, closeShape=True, size=stimSize, fillColor=st_incorrect_color, lineWidth =0, autoLog=False)
 
 
-items=[background, arrowup, donotreg, nf_line]
+
+
+
+
+items=[background, st_correct, st_incorrect, arrowup, donotreg, nf_line]
 for l in lines:
     items.append(l)
 items.append(cfb)
@@ -120,3 +131,5 @@ for i in items:
 win.flip()    
     
 
+
+#%% now, make the workflow...
