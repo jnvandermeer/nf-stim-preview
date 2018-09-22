@@ -28,7 +28,7 @@ LOCALHOST = "127.0.0.1"
 FC_PORT = 12345
 GUI_PORT = 12346
 BUFFER_SIZE = 65535
-TIMEOUT = 2.0        # seconds to wait for reply
+TIMEOUT = 5.0        # seconds to wait for reply
 
 
 class BciNetwork(object):
