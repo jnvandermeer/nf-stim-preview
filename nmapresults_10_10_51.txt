@@ -1,0 +1,124 @@
+Starting Nmap 7.70 ( https://nmap.org ) at 2018-09-23 11:11 AEST
+Nmap scan report for 10.10.51.1
+Host is up (0.0027s latency).
+Not shown: 999 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+
+Nmap scan report for 10.10.51.2
+Host is up (0.0020s latency).
+Not shown: 999 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+
+Nmap scan report for 10.10.51.3
+Host is up (0.0020s latency).
+Not shown: 999 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+
+Nmap scan report for fileserver01.adqimr.ad.lan (10.10.51.12)
+Host is up (0.0017s latency).
+Not shown: 992 closed ports
+PORT      STATE SERVICE
+111/tcp   open  rpcbind
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+445/tcp   open  microsoft-ds
+1311/tcp  open  rxmon
+2049/tcp  open  nfs
+3389/tcp  open  ms-wbt-server
+49152/tcp open  unknown
+
+Nmap scan report for fileserver01.adqimr.ad.lan (10.10.51.13)
+Host is up (0.0016s latency).
+Not shown: 991 closed ports
+PORT      STATE SERVICE
+111/tcp   open  rpcbind
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+443/tcp   open  https
+445/tcp   open  microsoft-ds
+1311/tcp  open  rxmon
+2049/tcp  open  nfs
+3389/tcp  open  ms-wbt-server
+49152/tcp open  unknown
+
+Nmap scan report for 10.10.51.16
+Host is up (0.0048s latency).
+Not shown: 999 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+
+Nmap scan report for 10.10.51.17
+Host is up (0.0056s latency).
+Not shown: 999 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+
+Nmap scan report for 10.10.51.18
+Host is up (0.0012s latency).
+Not shown: 992 closed ports
+PORT      STATE SERVICE
+111/tcp   open  rpcbind
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+443/tcp   open  https
+445/tcp   open  microsoft-ds
+1311/tcp  open  rxmon
+3389/tcp  open  ms-wbt-server
+49152/tcp open  unknown
+
+Nmap scan report for 10.10.51.19
+Host is up (0.0015s latency).
+Not shown: 992 closed ports
+PORT      STATE SERVICE
+111/tcp   open  rpcbind
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+443/tcp   open  https
+445/tcp   open  microsoft-ds
+1311/tcp  open  rxmon
+3389/tcp  open  ms-wbt-server
+49152/tcp open  unknown
+
+Nmap scan report for bkpnode01.adqimr.ad.lan (10.10.51.20)
+Host is up (0.0016s latency).
+Not shown: 990 closed ports
+PORT      STATE SERVICE
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+445/tcp   open  microsoft-ds
+1311/tcp  open  rxmon
+3389/tcp  open  ms-wbt-server
+49152/tcp open  unknown
+49153/tcp open  unknown
+49154/tcp open  unknown
+49155/tcp open  unknown
+49167/tcp open  unknown
+
+Nmap scan report for neurosrv01.adqimr.ad.lan (10.10.51.21)
+Host is up (0.0016s latency).
+Not shown: 991 closed ports
+PORT     STATE SERVICE
+22/tcp   open  ssh
+902/tcp  open  iss-realsecure
+4000/tcp open  remoteanything
+5925/tcp open  unknown
+6009/tcp open  X11:9
+6025/tcp open  x11
+7007/tcp open  afs3-bos
+8200/tcp open  trivnet1
+8888/tcp open  sun-answerbook
+
+Nmap scan report for hsmfile04.adqimr.ad.lan (10.10.51.22)
+Host is up (0.0014s latency).
+Not shown: 995 closed ports
+PORT      STATE SERVICE
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+445/tcp   open  microsoft-ds
+3389/tcp  open  ms-wbt-server
+49152/tcp open  unknown
+
+Nmap done: 256 IP addresses (12 hosts up) scanned in 26.81 seconds

@@ -1,0 +1,45 @@
+Starting Nmap 7.70 ( https://nmap.org ) at 2018-09-23 11:10 AEST
+Nmap scan report for 10.1.125.1
+Host is up (0.0019s latency).
+Not shown: 997 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+23/tcp open  telnet
+80/tcp open  http
+
+Nmap scan report for 10.1.125.10
+Host is up (0.014s latency).
+Not shown: 991 closed ports
+PORT     STATE SERVICE
+80/tcp   open  http
+389/tcp  open  ldap
+443/tcp  open  https
+445/tcp  open  microsoft-ds
+515/tcp  open  printer
+843/tcp  open  unknown
+1688/tcp open  nsjtp-data
+3268/tcp open  globalcatLDAP
+8080/tcp open  http-proxy
+
+Nmap scan report for 10.1.125.13
+Host is up (0.0015s latency).
+Not shown: 994 closed ports
+PORT     STATE SERVICE
+22/tcp   open  ssh
+4000/tcp open  remoteanything
+4443/tcp open  pharos
+7002/tcp open  afs3-prserver
+7004/tcp open  afs3-kaserver
+7007/tcp open  afs3-bos
+
+Nmap scan report for 10.1.125.242
+Host is up (0.0014s latency).
+Not shown: 995 closed ports
+PORT      STATE SERVICE
+21/tcp    open  ftp
+80/tcp    open  http
+443/tcp   open  https
+554/tcp   open  rtsp
+49152/tcp open  unknown
+
+Nmap done: 256 IP addresses (4 hosts up) scanned in 4.34 seconds
