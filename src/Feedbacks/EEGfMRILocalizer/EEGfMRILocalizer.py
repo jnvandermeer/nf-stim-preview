@@ -305,6 +305,11 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
             G['eh'].join()
             G['win'].close()
             logging.flush()
+
+
+        # once done, stop the FB with this:
+        # so we can re-start it, right?
+        self.on_stop()
         
         # here, we should call the main script 'efl'.
         
