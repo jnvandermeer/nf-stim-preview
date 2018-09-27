@@ -642,6 +642,29 @@ def init_eventcodes(G):
             'ec_BEGIN': 203,
             'ec_END': 204,
 
+
+
+
+            'h4l':221,
+            'h4r':222,
+            'h8l':223,
+            'h8r':224,
+            'v4u':225,
+            'v4d':226,
+            'v8u':227,
+            'v8d':228, 
+            'c':229, 
+            'hvest':231,
+            'hvestp':232,
+            'vvest':233,
+            'vvestp':234,
+            'eyeblinks':241,
+            'neckl':242,
+            'neckr':243,
+            'jaw':244,
+            'eyebrows':245,
+            'swallow':246,
+
                 
             }        
             
@@ -2001,6 +2024,205 @@ def end_task(G):
     win.flip()
 
 
+
+
+def measure_artifact_program(G):
+    
+    
+    
+    win=G['win']
+    eh=G['eh']
+    
+    cl=clock.Clock()
+    t1=visual.TextStim(win, 'Try to follow jumping/moving crosshair, without moving your head',pos=(0.0, 0.0), height=0.12,units='norm')
+    cl.reset()
+    while cl.getTime() < 4.0:
+        t1.draw()
+        win.flip()
+        
+    
+    a=visual.TextStim(win, '+',pos=(0.0, 0.0), height=0.12,units='norm')
+        
+    
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+
+
+
+    # do the saccades...
+    def move_a_fast(pos, msg, a):
+        a.pos=pos
+        cl.reset()
+        eh.send_message(msg)
+        while cl.getTime() < 2.2: #2.2:
+            a.draw()
+            win.flip()
+        
+        
+        # 'h4l','h4r','h8l','h8r','v4u','v4d','v8u','v8d', 'c', 'hvest','hvestp','vvest','vvestp','blinks','neck','jaw'
+
+    # horizontal...
+    positions = [(0, 0, 'c'), (-0.4, 0, 'h4l'), (0.4, 0, 'h4r'), (-0.4, 0, 'h4l'), (0.4, 0, 'h4r'), (-0.8, 0, 'h8l'), (0.8, 0, 'h8r'), (-0.8, 0, 'h8l'), (0.8, 0, 'h8r'), 
+                              (-0.4, 0, 'h4l'), (0.4, 0, 'h4r'), (-0.4, 0, 'h4l'), (0.4, 0, 'h4r'), (-0.8, 0, 'h8l'), (0.8, 0, 'h8r'), (-0.8, 0, 'h8l'), (0.8, 0, 'h8r'),
+                 (0, 0, 'c'), (0, -0.4, 'v4d'), (0, 0.4, 'v4u'), (0, -0.4, 'v4d'), (0, 0.4, 'v4u'), (0, -0.8, 'v8d'), (0, 0.8, 'v8u'), (0, -0.8, 'v8d'), (0, 0.8, 'v8u'), 
+                              (0, -0.4, 'v4d'), (0, 0.4, 'v4u'), (0, -0.4, 'v4d'), (0, 0.4, 'v4u'), (0, -0.8, 'v8d'), (0, 0.8, 'v8u'), (0, -0.8, 'v8d'), (0, 0.8, 'v8u'), ]
+                 
+    for p in positions:
+        x, y, msg = p
+        move_a_fast((x, y), msg, a)
+    
+    
+    
+    
+    def move_a_slow(b, e, msg, a):
+        # set pos a first..
+        a.pos=b
+        cl.reset()
+        eh.send_message(msg)
+
+        tmax = 3.0        
+        if msg == 'hvestp' or msg == 'vvestp':
+            tmax = 1.5
+
+        currentTime=0.0
+        while currentTime < tmax:
+            currentTime=cl.getTime()
+            
+            totx = e[0] - b[0]
+            toty = e[1] - b[1]
+            
+            dx = b[0] + currentTime / tmax * totx
+            dy = b[1] + currentTime / tmax * toty
+            
+            a.pos = (dx, dy)
+            a.draw()
+            win.flip()
+        
+        
+    # do the vestibulo stuff.
+    slow_positions = [[(0, 0), (-0.8, 0), 'hvestp'], [(-0.8, 0), (0.8, 0), 'hvest'], [(0.8, 0), (-0.8, 0), 'hvest'], [(-0.8, 0), (0.8, 0), 'hvest'], [(0.8, 0), (0, 0), 'hvestp'],
+                      [(0, 0), (0, -0.8), 'vvestp'], [(0, -0.8), (0, 0.8), 'vvest'], [(0, 0.8), (0, -0.8), 'vvest'], [(0, -0.8), (0, 0.8), 'vvest'], [(0, 0.8), (0, 0), 'vvestp'],
+                      ]
+
+    for sp in slow_positions:
+        b, e, msg = sp
+        move_a_slow(b, e, msg, a)
+
+
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+
+                      
+    # ask for eye blinks...
+    t2=visual.TextStim(win, 'Blink 10 times (keep eyes on cross), ~ 1 second between blinks',pos=(0.0, 0.4), height=0.08,units='norm')
+    a.pos=(0, 0)
+    cl.reset()
+    eh.send_message('eyeblinks')
+    while cl.getTime() < 12.0:
+        a.draw()
+        t2.draw()
+        win.flip()
+        
+
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+        
+
+        
+    
+    # ask for tense of neck muchles
+    t3=visual.TextStim(win, 'Tense your neck muscles (left) (4 seconds)',pos=(0.0, 0.0), height=0.12,units='norm')
+    cl.reset()
+    eh.send_message('neckl')
+    while cl.getTime() < 4.0:
+        t3.draw()
+        win.flip()
+        
+    
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+
+        
+
+    # ask for tense of neck muchles
+    t4=visual.TextStim(win, 'Tense your neck muscles (right) (4 seconds)',pos=(0.0, 0.0), height=0.12,units='norm')
+    cl.reset()
+    eh.send_message('neckr')
+    while cl.getTime() < 4.0:
+        t4.draw()
+        win.flip()
+        
+        
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+
+        
+    # ask for tense of neck muchles
+    t5=visual.TextStim(win, 'Tense your jaw muscles (clench teeth) (4 seconds)',pos=(0.0, 0.0), height=0.12,units='norm')
+    cl.reset()
+    eh.send_message('jaw')
+    while cl.getTime() < 3.5:
+        t5.draw()
+        win.flip()
+
+    
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+
+
+    # ask for tense of neck muchles
+    t6=visual.TextStim(win, 'Frown your eyebrows (4 seconds)',pos=(0.0, 0.0), height=0.12,units='norm')
+    cl.reset()
+    eh.send_message('eyebrows')
+    while cl.getTime() < 4.0:
+        t6.draw()
+        win.flip()
+
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+        
+        
+    # ask for tense of neck muchles
+    t7=visual.TextStim(win, 'Deep Swallow Once..',pos=(0.0, 0.0), height=0.12,units='norm')
+    cl.reset()
+    eh.send_message('swallow')
+    while cl.getTime() < 3.0:
+        t7.draw()
+        win.flip()        
+
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+
+
+        
+    # ask for tense of neck muchles
+    t8=visual.TextStim(win, 'Thank you, we continue with main experiment!',pos=(0.0, 0.0), height=0.12,units='norm')
+    cl.reset()
+    while cl.getTime() < 3.5:
+        t8.draw()
+        win.flip()
+        
+
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+
+
+
+
+
+
+
+
+
 #%% Separate subroutine to start up the event handler:
     
     
@@ -2116,8 +2338,12 @@ if __name__== "__main__":
         
         # print(G['eh'].is_alive())
         wait_for_key(G)
+        
+        measure_artifact_program(G)
+                
         test_buttons(G)
         instr_screen0(G)
+        
         eo_stim(G)
         ec_stim(G)
         logging.flush()
