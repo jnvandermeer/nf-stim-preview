@@ -1890,13 +1890,12 @@ def eo_stim(G):
         win.flip()
     eh.send_message('eo_END')
     
-    
-    
+
 
 
 def ec_stim(G):
     
-    snd_endeyesclosed = sound.backend_pygame.SoundPygame(value=391*2,secs=0.8,loops=0)
+    snd_endeyesclosed = sound.backend_pygame.SoundPygame(value=391,secs=0.8,loops=0, volume=0.5)
     EYESCLOSED_TIME=G['v']['EYESCLOSED_TIME']
     win=G['win']
     eh=G['eh']

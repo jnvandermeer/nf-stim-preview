@@ -1,18 +1,10 @@
-import random
-import sys
-import math
-import random
-import os
-import time
-import pickle
 
 
 # in * is also: from psychopy import locale_setup, sound, gui, visual, core, data, event, logging
 # visual, sound, core, data, event and logging are the crucial ones.
-import pygame
-import psychopy
-from psychopy import locale_setup, sound, gui, visual, core, data, event, logging, clock # I guess this is the best way?
 
+import random
+from psychopy import clock, event, data, logging
 
 from FeedbackBase.MostBasicPsychopyFeedback import MostBasicPsychopyFeedback
 
@@ -36,6 +28,8 @@ from Feedbacks.BrainWaveTraining.ingredients.stimuli import runTrial
 from Feedbacks.BrainWaveTraining.ingredients.stimuli import flatten
 
 
+# get the pause screen!
+from Feedbacks.EEGfMRILocalizer.efl.efl_v11 import wait_for_key
 # we use the Dirty Programming Method (*) to import all of psychopy's utlilities and tricks
 
 # we need this additional line - this is how we import psychopy -- why we need to write this multiple times?
@@ -71,7 +65,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         self.EX_UPREGTEXT = 'regulate up'
         self.EX_TESTSIGNALUPDATEINTERVAL = 0.05
         self.EX_NREST = 10
-        self.EX_SCALING = (0.75, 0.75)          # scaling for X and Y
+        self.EX_SCALING = [0.75, 0.75]          # scaling for X and Y
         self.EX_INTERACTIONMODE = 'master'      # the stimulus does already quite a lot
         self.EX_NOBSERVE = 10
         self.EX_NOREGTEXT = 'do not regulate'
@@ -106,8 +100,8 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         self.MONITOR_GAMMA=1.
         self.MONITOR_FPS=60.
         self.MONITOR_USEDEGS=True
-        self.MONITOR_DEGS_WIDTHBASE=30
-        self.MONITOR_DEGS_HEIGHTBASE=25
+        self.MONITOR_DEGS_WIDTHBASE=12
+        self.MONITOR_DEGS_HEIGHTBASE=10
         self.MONITOR_FLIPHORIZONTAL = False
         self.MONITOR_FLIPVERTICAL = False
         self.MONITOR_RECORDFRAMEINTERVALS = True  # for debugging..        
@@ -261,33 +255,43 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
 
 
 
+        # use the Cpntrol Parameters:
+        CP=self.CP # control parameters...
 
+        # create G, put it into self too..
         G=dict()
         G['v']=v
+        self.G = G
         
-        CP=self.CP # control parameters...
-        #
-        # global variable with references to desired memory locations is easier to pass around.
+        
+        # we need this in order to continue working as if we're doing it using the normal (test) script...
+        for key in G['v']:
+            G[key]=G['v'][key] # this is actually superfluous. But removing it might possibly break things.
+            
+        
+        
+        # the main clock
         mainClock=clock.Clock()
         G['mainClock']=mainClock
         
-        self.G=G  # try this..
-        
-        # we don't need to set them here again, I think.
-        
-        # doing all of the init stuff:
+
+        # screen/monitor...
         G=init_screen(G)  # we need to do this
 
-        # this takes care of the logging.
+
+        # logging...
         logging.setDefaultClock(G['mainClock'])
         newLogFile = create_incremental_filename(G['v']['LOG_PATHFILE'])
-        #expLogger = logging.LogFile(newLogFile, logging.EXP) # the correct loglevel should be EXP!
+        expLogger = logging.LogFile(newLogFile, logging.EXP) # the correct loglevel should be EXP!
+        print(expLogger)
         logging.LogFile(newLogFile, logging.EXP) # the correct loglevel should be EXP!
+        print('made new logfile: ' + newLogFile)
         for key in G['v'].keys():
             logging.data("{key}: {value}".format(key=key, value=G['v'][key]))
-
+        logging.flush()
+        G['logging']=logging  # put into the G, which is in self
         
-
+        # event handler...
         G=init_eventcodes(G)  # and this??
         G=start_eh(G)
 
@@ -340,6 +344,9 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         self.runlist = iter([my_trial_definitions[i] for i in my_trial_sequence])
         
         logging.flush()
+        G['logging']=logging
+        
+        G['cl']=clock.Clock()   # init the trial-by-trial clock here and put into G...
         
         
         
@@ -350,8 +357,9 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         
         self.G['eh'].shutdown()
         self.G['eh'].join()
+        self.G['logging'].flush()
         self.G['win'].close()
-        logging.flush()
+
         
 
     # this always gets called, even paused.. -- UNTIL self.on_stop() is called. this will exit the main loop.
@@ -373,7 +381,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
             trialType=self.runlist.next()
 
             runTrial(trialType, G, st, CP, ex)
-            logging.flush()
+            G['logging'].flush()
             
             
         except StopIteration:
@@ -396,11 +404,18 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
     # this gets called ONLY -- while on play mode
     def play_tick(self):
         print('I Resumed Play!')
+        # probably, play and pause don't do anything.. right?
         pass
     
     # this gets called ONLY -- while on pause mode
     def pause_tick(self):
         print('paused!')
+        wait_for_key(self.G)  # so, call self.G
+        
+        # I could here put up a screen asking to press 'play', from EFL?
+        
+        
+        
         # pass
     
     # one could define several other tick methods for different kinds of behaviours.
@@ -413,9 +428,14 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         #self.NFPos = data["data"]
         # but we can change properties of the data --> so can draw stff!
         
-        
         for key in data.keys():
             self.CP[key] = data[key]
+            if key == 'nfsignalContainer':
+                self.G['eh'].send_message('recv_nfsignal')
+            elif key == 'corr_incorr:':
+                self.G['eh'].send_message('recv_thr')
+            elif key == 'thrContainer':
+                self.G['eh'].send_message('recv_corr_incorr')
 
         
         #CP['nfsignalContainer'] = [0]

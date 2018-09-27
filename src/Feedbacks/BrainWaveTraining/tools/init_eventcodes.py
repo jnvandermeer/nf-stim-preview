@@ -48,6 +48,13 @@ def init_eventcodes(G):
             'xorvtransfer':44,
             'bisitransfer':45,
             'eisitransfer':46,
+            
+            
+            'recv_nfsignal':101,
+            'recv_thr':102,
+            'recv_corr_incorr':103,
+            
+            
     }        
             
             

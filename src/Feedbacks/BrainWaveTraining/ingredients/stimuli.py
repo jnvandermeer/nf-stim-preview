@@ -17,6 +17,9 @@
 
 #%% imports
 # getting the window right:
+
+import inspect, os
+
 from psychopy import visual, clock
 import numpy as np
 import random
@@ -47,52 +50,75 @@ def flatten_helper(lst, new_lst):
 G=dict()
 
 
-G['TINSTR']  = 2.0
-G['TPAUSE']  = 0.5
-G['TFB']     = 12.0     # we'd wish to have the subjects look long at this, right?
-G['TVSP']    = 0.4
-G['TMARK']   = 1.5
-G['TJITT']   = [0.8, 1.3]
+G['EX_TINSTR']  = 2.0
+G['EX_TPAUSE']  = 0.5
+G['EX_TFB']     = 12.0     # we'd wish to have the subjects look long at this, right?
+G['EX_TVSP']    = 0.4
+G['EX_TMARK']   = 1.5
+G['EX_TJITT']   = [0.8, 1.3]
 
 
-G['TESTNFNOISE'] = True  # for checkign whether everything works...
-G['TESTSIGNALTYPE'] = 'sin'  # or random
-G['TESTSIGNALPERIOD'] = 4  # seconds
-G['TESTSIGNALUPDATEINTERVAL'] = 0.05   # make sure it's not the same.
+G['EX_TESTNFNOISE'] = True  # for checkign whether everything works...
+G['EX_TESTSIGNALTYPE'] = 'sin'  # or random
+G['EX_TESTSIGNALPERIOD'] = 4  # seconds
+G['EX_TESTSIGNALUPDATEINTERVAL'] = 0.05   # make sure it's not the same.
 
-G['GRAPHICSMODE'] = 'line'  # what kind of stimulus?
-G['INTERACTIONMODE'] = 'master'  # now it will calculate succes and failure itself based on passed-on parameters in G
+G['EX_GRAPHICSMODE'] = 'line'  # what kind of stimulus?
+G['EX_INTERACTIONMODE'] = 'master'  # now it will calculate succes and failure itself based on passed-on parameters in G
                                  # also, it will listen to what kind of trial needs to be run depending on what's passed on.
                                  # slave will be that it's dependent on the signals coming in from the Master Computer.
 
 
 
-G['UPREGTEXT'] = 'regulate up'
-G['NOREGTEXT']= 'do not regulate'
-G['POINTS_REWARD'] = 10
-G['POINTS_PENALTY'] = -2
-G['STAIRCASEMANIPULATION'] = 'offset'
+G['EX_UPREGTEXT'] = 'regulate up'
+G['EX_NOREGTEXT']= 'do not regulate'
+G['EX_POINTS_REWARD'] = 10
+G['EX_POINTS_PENALTY'] = -2
+G['EX_STAIRCASEMANIPULATION'] = 'offset'
 
 
-G['NREST']=10
-G['NOBSERVE']=10
-G['NREGULATE']=30
-G['NTRANSFER']=10
-G['SCALING']=(0.75, 0.75)
-G['PATCHCOLOR']='green'
+G['EX_NREST']=10
+G['EX_NOBSERVE']=10
+G['EX_NREGULATE']=30
+G['EX_NTRANSFER']=10
+G['EX_SCALING']=[0.75, 0.75]
+G['EX_PATCHCOLOR']='green'
 
-G['SHOWCHECKORCROSS'] = True
-G['SHOWCHECKORCROSSTRANSFER'] = True
+G['EX_SHOWCHECKORCROSS'] = True
+G['EX_SHOWCHECKORCROSSTRANSFER'] = True
 
-G['SQUARESIZE'] = 0.25 # in case we have the square NF...
+G['EX_SQUARESIZE'] = 0.25 # in case we have the square NF...
 
-G['THRLINEWIDTH']=2
-G['THERMOCLIMS']=['c4572e', '4fc42e']  # in hex format
+G['EX_THRLINEWIDTH']=2
+G['EX_THERMOCLIMS']=['c4572e', '4fc42e']  # in hex format
 
-G['COLORGAP'] = 1  # the gap between colors when thr is passed. -- uses the colorcalculator
+G['EX_COLORGAP'] = 1  # the gap between colors when thr is passed. -- uses the colorcalculator
 
 
-G['PR_SLEEPTIME'] = 0.01 # 0.01  # how long do we 'sleep' in our main program threads? (screen update is ~0.0016 seconds)
+G['EX_PR_SLEEPTIME'] = 0.01 # 0.01  # how long do we 'sleep' in our main program threads? (screen update is ~0.0016 seconds)
+
+
+
+G['MONITOR_PIXWIDTH']=1280
+G['MONITOR_PIXHEIGHT']=1024
+G['MONITOR_WIDTH']=40.  # width of screen
+G['MONITOR_HEIGHT']=30.  # height of screen
+G['MONITOR_DISTANCE']=70.  # distance to screen
+G['MONITOR_GAMMA']=1.
+G['MONITOR_FPS']=60.
+G['MONITOR_USEDEGS']=False
+G['MONITOR_DEGS_WIDTHBASE']=12
+G['MONITOR_DEGS_HEIGHTBASE']=10
+G['MONITOR_FLIPHORIZONTAL'] = False
+G['MONITOR_FLIPVERTICAL'] = False
+G['MONITOR_RECORDFRAMEINTERVALS'] = True  # for debugging..        
+G['MONITOR_NSCREENS']=2
+G['MONITOR_DISPLAYONSCREEN']=1
+G['MONITOR_FULLSCR'] = False
+G['MONITOR_ALLOWGUI'] = False
+
+
+
 
 # control parameters for the NF Experiment, things that change due to programs or fcalls, etc.
 CP=dict()
@@ -117,7 +143,34 @@ def init_window(G):
 
 def make_stimuli(G, CP):
     win=G['win']
-    SCALING=G['SCALING']
+    
+
+    
+    # accomodate degrees, also, when we wish to use degrees:
+    # take into account when making stimuli
+    if G['MONITOR_USEDEGS'] is True:
+        
+        
+        f_x = G['MONITOR_DEGS_WIDTHBASE']
+        f_y = G['MONITOR_DEGS_HEIGHTBASE']
+        
+        G['EX_SCALING'][0] = f_x
+        G['EX_SCALING'][1] = f_y
+           
+        
+        G['f_x'] = f_x
+        G['f_y'] = f_y
+
+
+    SCALING=G['EX_SCALING']
+    # print(SCALING)
+    
+    # another essential -- making sure we can load in the stimuli from wherever this file is located:
+    currfile=inspect.getfile(inspect.currentframe()) # script filename (usually with path)
+    currpath=os.path.dirname(os.path.abspath(currfile)) # script directory
+    print(currfile)
+    print(currpath)
+    
     
     # making the dashed line -- for the stimulus, we can set autodraw optially to true for this one.
     def make_dashed(win, G, b, e, N, d):
@@ -150,13 +203,15 @@ def make_stimuli(G, CP):
             # ypose = yposb+0.1
             # print([xposb, yposb, xpose, ypose])
             
-            lines.append(visual.Line(win, start=(xposb, yposb), end=(xpose, ypose), lineWidth=G['THRLINEWIDTH']))
+            lines.append(visual.Line(win, start=(xposb, yposb), end=(xpose, ypose), lineWidth=G['EX_THRLINEWIDTH']))
+
+            
         return lines
             
     # the dotted line:
     lines=make_dashed(win, G, (-1, 0), (1, 0), 20, 0.5)
     for l in lines:
-        l.setWidth=G['THRLINEWIDTH']
+        l.setWidth=G['EX_THRLINEWIDTH']
 
     
     # background
@@ -187,7 +242,6 @@ def make_stimuli(G, CP):
                                  size=stimSize, ori=45, lineColor='white', autoLog=False)
     
     
-    
     # this emulates a NF trace...
     # import random
     
@@ -206,17 +260,18 @@ def make_stimuli(G, CP):
     
     
     
+    # might need alteration(s) here..
     # the vertices for 'correct':
-    vert_correct=np.loadtxt('stim/vert_correct.txt')
+    vert_correct=np.loadtxt(os.path.join(currpath, 'stim/vert_correct.txt'))
     st_correct_color='#5fd35f'
     st_correct = visual.ShapeStim(win, vertices=vert_correct, closeShape=True, size=stimSize, fillColor=st_correct_color, lineWidth =0, autoLog=False)
     
-    vert_incorrect=np.loadtxt('stim/vert_incorrect.txt')
+    vert_incorrect=np.loadtxt(os.path.join(currpath,'stim/vert_incorrect.txt'))
     st_incorrect_color='#e01000';
     st_incorrect = visual.ShapeStim(win, vertices=vert_incorrect, closeShape=True, size=stimSize, fillColor=st_incorrect_color, lineWidth =0, autoLog=False)
     
-    st_txt_upregulate = visual.TextStim(win, text=G['UPREGTEXT'],units='norm')
-    st_txt_noregulate = visual.TextStim(win, text=G['NOREGTEXT'],units='norm')  # we won't be scaling these
+    st_txt_upregulate = visual.TextStim(win, text=G['EX_UPREGTEXT'],units='norm')
+    st_txt_noregulate = visual.TextStim(win, text=G['EX_NOREGTEXT'],units='norm')  # we won't be scaling these
     
     
     
@@ -226,10 +281,11 @@ def make_stimuli(G, CP):
     items.append(cfb)
     
     
-    # scale it:
+    # apply OUR scaling:
     for i in items:
         oldsize=i.size
         i.setSize((oldsize[0]*SCALING[0], oldsize[1]*SCALING[1]))
+
 
 
     # all stimuli (see above)
@@ -259,7 +315,7 @@ def make_stimuli(G, CP):
     #
 
     
-    thermo_lines=make_dashed(win, G, (-0.6, CP['thrContainer'][0]*G['SCALING'][1]), (0.6, CP['thrContainer'][0]*G['SCALING'][1]), 15, 0.5)
+    thermo_lines=make_dashed(win, G, (-0.6, CP['thrContainer'][0]*G['EX_SCALING'][1]), (0.6, CP['thrContainer'][0]*G['EX_SCALING'][1]), 15, 0.5)
     
     
     thermo_thermometer = thermo_thermometer=visual.ShapeStim(win, lineWidth=1.5, lineColor='white', fillColor='green', vertices=[(-0.25, -1), (-0.25, 1), (0.25, 1), (0.25, -1)])
@@ -287,13 +343,13 @@ def make_stimuli(G, CP):
     #
     #
 
-    square=visual.Rect(G['win'], width=G['SQUARESIZE'], height=G['SQUARESIZE'], fillColor=[-0.1,-0.1,-0.1], lineColor=[-0.1,-0.1,-0.1])
-    square_silent = visual.Rect(G['win'], width=G['SQUARESIZE'], height=G['SQUARESIZE'], fillColor='grey', lineColor='black')
+    square=visual.Rect(G['win'], width=G['EX_SQUARESIZE'], height=G['EX_SQUARESIZE'], fillColor=[-0.1,-0.1,-0.1], lineColor=[-0.1,-0.1,-0.1])
+    square_silent = visual.Rect(G['win'], width=G['EX_SQUARESIZE'], height=G['EX_SQUARESIZE'], fillColor='grey', lineColor='black')
     
     if G['win'].units == 'norm':
-        square_focus = visual.Rect(G['win'], width=G['SQUARESIZE']/10. * G['win'].size[1] / float(G['win'].size[0]), height=G['SQUARESIZE']/10., fillColor='black', lineWidth=0)
+        square_focus = visual.Rect(G['win'], width=G['EX_SQUARESIZE']/10. * G['win'].size[1] / float(G['win'].size[0]), height=G['EX_SQUARESIZE']/10., fillColor='black', lineWidth=0)
     else:
-        square_focus = visual.Rect(G['win'], width=G['SQUARESIZE']/10., height=G['SQUARESIZE']/10., fillColor='black', lineWidth=0)
+        square_focus = visual.Rect(G['win'], width=G['EX_SQUARESIZE']/10., height=G['EX_SQUARESIZE']/10., fillColor='black', lineWidth=0)
         
     
     
@@ -309,6 +365,9 @@ def make_stimuli(G, CP):
     st['square']=square
     st['square_silent']=square_silent
     st['square_focus']=square_focus
+    
+    
+    
     
 
     
@@ -329,47 +388,51 @@ def define_experiment(G, st, pr, CP):
     ex['line']['train']=dict()
     ex['line']['transfer']=dict()
     
-    TINSTR=G['TINSTR']  
-    TPAUSE=G['TPAUSE'] 
-    TFB=G['TFB']     
-    TVSP=G['TVSP']    
-    TMARK=G['TMARK']  
+    TINSTR=G['EX_TINSTR']  
+    TPAUSE=G['EX_TPAUSE'] 
+    TFB=G['EX_TFB']     
+    TVSP=G['EX_TVSP']    
+    TMARK=G['EX_TMARK']  
     # TJITT=G['TJITT']  
+    
+    
+    
+    
     
     
     # for each trial type, show what's going the be on the screen...
     ex['line']['train']['sequence']             = ['instruction', 'pause', 'feedback', 'veryshortpause1', 'veryshortpause2', 'mark', 'jitterpause' ]
-    ex['line']['train']['instruction']          = ([],                                  TINSTR,      [st['background'], st['st_txt_upregulate']])
-    ex['line']['train']['pause']                = ([],                                  TPAUSE,      [st['background']])
-    ex['line']['train']['feedback']             = ([[pr['LineCalculations'], 'start']], TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']])
-    ex['line']['train']['veryshortpause1']      = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']])
-    ex['line']['train']['veryshortpause2']      = ([],                                  TVSP,        [st['background']])
-    ex['line']['train']['mark']                 = ([],                                  TMARK,       [st['background'], st['corr_incorr']])
-    ex['line']['train']['jitterpause']          = ([[pr['pickRandomJitter'], 'call']],  CP['TJITT'], [st['background']])
+    ex['line']['train']['instruction']          = ([],                                  TINSTR,      [st['background'], st['st_txt_upregulate']],                                   ['instruction','itrain'], [])
+    ex['line']['train']['pause']                = ([],                                  TPAUSE,      [st['background']],                                                            [], [])
+    ex['line']['train']['feedback']             = ([[pr['LineCalculations'], 'start']], TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    ['bFB','btrain'], ['eFB','etrain'])
+    ex['line']['train']['veryshortpause1']      = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    [], [])
+    ex['line']['train']['veryshortpause2']      = ([],                                  TVSP,        [st['background']],                                                            [], [])
+    ex['line']['train']['mark']                 = ([],                                  TMARK,       [st['background'], st['corr_incorr']],                                         ['XorV','xorvtrain'], [])
+    ex['line']['train']['jitterpause']          = ([[pr['pickRandomJitter'], 'call']],  CP['TJITT'], [st['background']],                                                            ['bISI','bisitrain'], ['eISI','eisitrain'])
     
     
     ex['line']['transfer']['sequence']          = ['instruction', 'pause', 'feedback', 'veryshortpause', 'mark', 'jitterpause' ]
-    ex['line']['transfer']['instruction']       = ([],                                  TINSTR,      [st['background'], st['st_txt_upregulate']])
-    ex['line']['transfer']['pause']             = ([],                                  TPAUSE,      [st['background']])
-    ex['line']['transfer']['feedback']          = ([[pr['LineCheck'], 'call']],         TFB,         [st['background'], st['thrline']])
-    ex['line']['transfer']['veryshortpause']    = ([],                                  TVSP,        [st['background']])
-    ex['line']['transfer']['mark']              = ([],                                  TMARK,       [st['background'], st['corr_incorr']])
-    ex['line']['transfer']['jitterpause']       = ([[pr['pickRandomJitter'], 'call']],  CP['TJITT'], [st['background']])
+    ex['line']['transfer']['instruction']       = ([],                                  TINSTR,      [st['background'], st['st_txt_upregulate']],                                   ['instruction','itransfer'], [])
+    ex['line']['transfer']['pause']             = ([],                                  TPAUSE,      [st['background']],                                                            [], [])
+    ex['line']['transfer']['feedback']          = ([[pr['LineCheck'], 'call']],         TFB,         [st['background'], st['thrline']],                                             ['bFB','btransfer'], ['eFB','etransfer'])
+    ex['line']['transfer']['veryshortpause']    = ([],                                  TVSP,        [st['background']],                                                            [], [])
+    ex['line']['transfer']['mark']              = ([],                                  TMARK,       [st['background'], st['corr_incorr']],                                         ['XorV''xorvtransfer'], [])
+    ex['line']['transfer']['jitterpause']       = ([[pr['pickRandomJitter'], 'call']],  CP['TJITT'], [st['background']],                                                            ['bISI','bisitransfer'], ['eISI','eisitransfer'])
     
     
     ex['line']['observe']['sequence']           = ['instruction', 'pause', 'feedback', 'veryshortpause', 'jitterpause' ]
-    ex['line']['observe']['instruction']        = ([],                                  TINSTR,      [st['background'], st['st_txt_noregulate']])
-    ex['line']['observe']['pause']              = ([],                                  TPAUSE,      [st['background']])
-    ex['line']['observe']['feedback']           = ([[pr['LineCalculations'], 'start']], TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']])
-    ex['line']['observe']['veryshortpause']     = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']])
-    ex['line']['observe']['jitterpause']        = ([[pr['pickRandomJitter'], 'call']],  CP['TJITT'], [st['background']])
+    ex['line']['observe']['instruction']        = ([],                                  TINSTR,      [st['background'], st['st_txt_noregulate']],                                   ['instruction','iobserve'], [])
+    ex['line']['observe']['pause']              = ([],                                  TPAUSE,      [st['background']],                                                            [], [])
+    ex['line']['observe']['feedback']           = ([[pr['LineCalculations'], 'start']], TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    ['bFB','bobserve'], ['eFB','eobserve'])
+    ex['line']['observe']['veryshortpause']     = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    [], [])
+    ex['line']['observe']['jitterpause']        = ([[pr['pickRandomJitter'], 'call']],  CP['TJITT'], [st['background']],                                                            ['bISI','bisiobserve'], ['eISI','eisiobserve'])
 
     
     ex['line']['rest']['sequence']              = ['instruction', 'pause', 'feedback', 'jitterpause' ]
-    ex['line']['rest']['instruction']           = ([],                                  TINSTR,      [st['background'], st['st_txt_noregulate']])
-    ex['line']['rest']['pause']                 = ([],                                  TPAUSE,      [st['background']])
-    ex['line']['rest']['feedback']              = ([[pr['LineCheck'], 'call']],         TFB,         [st['background'], st['thrline']])
-    ex['line']['rest']['jitterpause']           = ([[pr['pickRandomJitter'], 'call']],  CP['TJITT'], [st['background']])
+    ex['line']['rest']['instruction']           = ([],                                  TINSTR,      [st['background'], st['st_txt_noregulate']],                                   ['instruction','irest'], [])
+    ex['line']['rest']['pause']                 = ([],                                  TPAUSE,      [st['background']],                                                            [], [])
+    ex['line']['rest']['feedback']              = ([[pr['LineCheck'], 'call']],         TFB,         [st['background'], st['thrline']],                                             ['bFB', 'brest'], ['eFB', 'erest'])
+    ex['line']['rest']['jitterpause']           = ([[pr['pickRandomJitter'], 'call']],  CP['TJITT'], [st['background']],                                                            ['bISI','bisirest'],['eISI','eisirest'])
 
 
 
@@ -413,17 +476,17 @@ def define_experiment(G, st, pr, CP):
 
     # taking care of other stuff, like do-we-show feedback or not?
     for key in ex.keys():
-        if G['SHOWCHECKORCROSS'] is False:
+        if G['EX_SHOWCHECKORCROSS'] is False:
             ex[key]['train']['sequence']             = ['instruction', 'pause', 'feedback', 'veryshortpause1', 'jitterpause' ]
             
-        elif G['SHOWCHECKORCROSSTRANSFER'] is False:
+        elif G['EX_SHOWCHECKORCROSSTRANSFER'] is False:
             ex[key]['transfer']['sequence']           = ['instruction', 'pause', 'feedback', 'jitterpause' ]
             
 
 
     
 
-    return ex[G['GRAPHICSMODE']]
+    return ex[G['EX_GRAPHICSMODE']]
 
 
 
@@ -448,17 +511,17 @@ def init_programs(G, st, CP):
         
         def run(self):
             
-            if G['TESTSIGNALTYPE'] == 'random':
+            if G['EX_TESTSIGNALTYPE'] == 'random':
                 while self.running is True:
                     signal = random.random()/2 + 0.25
                     
                     self.lst[0] = signal
                     
-                    time.sleep(G['TESTSIGNALUPDATEINTERVAL'])
+                    time.sleep(G['EX_TESTSIGNALUPDATEINTERVAL'])
                     
-            elif G['TESTSIGNALTYPE'] == 'sin':
+            elif G['EX_TESTSIGNALTYPE'] == 'sin':
                 
-                period = G['TESTSIGNALPERIOD']
+                period = G['EX_TESTSIGNALPERIOD']
                 from math import sin, pi
                 
                 cl=clock.Clock()
@@ -466,7 +529,7 @@ def init_programs(G, st, CP):
                 while self.running is True:
                     signal = sin(cl.getTime() / float(period) * 2. * pi)
                     self.lst[0]=signal
-                    time.sleep(G['TESTSIGNALUPDATEINTERVAL'])
+                    time.sleep(G['EX_TESTSIGNALUPDATEINTERVAL'])
                 
             
         def stop(self):
@@ -482,8 +545,8 @@ def init_programs(G, st, CP):
         And has been implemented to add the jitter time between triaks
         '''
         
-        e=G['TJITT'][1]
-        b=G['TJITT'][0]
+        e=G['EX_TJITT'][1]
+        b=G['EX_TJITT'][0]
         t = random.random() * (e-b) + b
         
         CP['TJITT'][0] = t  # well, the memory olcation points to a list and this is the constant. the contents of the list changes.
@@ -557,14 +620,14 @@ def init_programs(G, st, CP):
             super(LineCalculations, self).__init__()
             
             self.win = G['win']  # our window..
-            self.tmax = G['TFB']   # this is how long we should display the stimulus on screen.
+            self.tmax = G['EX_TFB']   # this is how long we should display the stimulus on screen.
             self.thrContainer = CP['thrContainer']  # this is the threshold -- probably also set by on_control_event...
             self.nfvalueContainer = CP['nfsignalContainer']  # so this will be set (hopefully) by the handle_control_event...
-            self.scaling = G['SCALING']  # to scale... implementation of pos to be done later..
+            self.scaling = G['EX_SCALING']  # to scale... implementation of pos to be done later..
             self.st = st  # this contains points to all the stimuli.
-            self.patch_color = G['PATCHCOLOR']
-            self.hb, self.he = G['THERMOCLIMS']
-            self.colorgap = G['COLORGAP']
+            self.patch_color = G['EX_PATCHCOLOR']
+            self.hb, self.he = G['EX_THERMOCLIMS']
+            self.colorgap = G['EX_COLORGAP']
             
             self._vert=[]
             
@@ -630,9 +693,11 @@ def init_programs(G, st, CP):
             curtime=0
             curi=0
             cl=clock.Clock()  # yeah...well, we make a second clock. should not be too off in seconds.
+            
+            lastypos=0.
             while curtime < self.tmax:
                 
-                time.sleep(G['PR_SLEEPTIME'])
+                time.sleep(G['EX_PR_SLEEPTIME'])
                 
                 curtime=cl.getTime()
                 curi += 1
@@ -655,14 +720,16 @@ def init_programs(G, st, CP):
                 
                 # if patchi>0:
                 # now comes fun part -- i.e. the patches.
+
                 if ypos > self.thrContainer[0]:
                     ABOVE=True
                     
                     if ABOVE_PREV is True:
                         # just add one vertex..
 
-
-                        rnew, gnew, bnew = my_color_calculator(self.hb, self.he, thr, self.colorgap, ypos, 1, -1)   
+                        if ypos > lastypos:
+                            ypos_for_color = ypos
+                        rnew, gnew, bnew = my_color_calculator(self.hb, self.he, thr, self.colorgap, ypos_for_color, 1, -1)   
                         self.patch_color = (rnew, gnew, bnew)                        
                                 
                         patch_vert.pop()
@@ -674,6 +741,8 @@ def init_programs(G, st, CP):
                         replacement = visual.ShapeStim(self.win, vertices=patch_vert, fillColor=self.patch_color, size=self.scaling, lineWidth=0)
                         # current_patch.setVertices(patch_vert)
                         patches[-1] = replacement
+                        
+                        lastypos=ypos
                     
                     else:
                         
@@ -720,7 +789,7 @@ def init_programs(G, st, CP):
                 ABOVE_PREV=ABOVE
 
                 
-            if G['INTERACTIONMODE'] == 'master':
+            if G['EX_INTERACTIONMODE'] == 'master':
                 pass  # call staircase calculator now, that will make things ready for the next (feedback) step.
 
                 
@@ -756,17 +825,17 @@ def init_programs(G, st, CP):
             super(ThermoCalculations, self).__init__()
             
             self.win = G['win']  # our window..
-            self.tmax = G['TFB']   # this is how long we should display the stimulus on screen.
+            self.tmax = G['EX_TFB']   # this is how long we should display the stimulus on screen.
             self.thrContainer = CP['thrContainer']  # this is the threshold -- probably also set by on_control_event...
             self.nfsignalContainer = CP['nfsignalContainer']  # so this will be set (hopefully) by the handle_control_event...
-            self.scaling = G['SCALING']  # to scale... implementation of pos to be done later..
+            self.scaling = G['EX_SCALING']  # to scale... implementation of pos to be done later..
             self.st = st  # this contains points to all the stimuli.
-            self.patch_color = G['THERMOCLIMS']
-            self.colorgap = G['COLORGAP']
+            self.patch_color = G['EX_THERMOCLIMS']
+            self.colorgap = G['EX_COLORGAP']
             
 
 
-            self.hb, self.he = G['THERMOCLIMS']
+            self.hb, self.he = G['EX_THERMOCLIMS']
             
             
 
@@ -797,7 +866,7 @@ def init_programs(G, st, CP):
             cl=clock.Clock()  # yeah...well, we make a second clock. should not be too off in seconds.
             while curtime < self.tmax:
                 
-                time.sleep(G['PR_SLEEPTIME'])
+                time.sleep(G['EX_PR_SLEEPTIME'])
                 
                 curtime=cl.getTime()
                 
@@ -818,7 +887,7 @@ def init_programs(G, st, CP):
                 thermo_thermometer_container[0] = replacement_thermo
 
 
-            if G['INTERACTIONMODE'] == 'master':
+            if G['EX_INTERACTIONMODE'] == 'master':
                 pass  # call staircase calculator now, that will make things ready for the next (feedback) step.
 
 
@@ -853,12 +922,12 @@ def init_programs(G, st, CP):
             super(SquareCalculations, self).__init__()
             
             self.win = G['win']  # our window..
-            self.tmax = G['TFB']   # this is how long we should display the stimulus on screen.
+            self.tmax = G['EX_TFB']   # this is how long we should display the stimulus on screen.
             self.thrContainer = CP['thrContainer']  # this is the threshold -- probably also set by on_control_event...
             self.nfsignalContainer = CP['nfsignalContainer']  # so this will be set (hopefully) by the handle_control_event...
             self.st = st  # this contains points to all the stimuli.
-            self.colorgap = G['COLORGAP']
-            self.hb, self.he = G['THERMOCLIMS']
+            self.colorgap = G['EX_COLORGAP']
+            self.hb, self.he = G['EX_THERMOCLIMS']
 
 
 
@@ -872,7 +941,7 @@ def init_programs(G, st, CP):
             cl=clock.Clock()  # yeah...well, we make a second clock. should not be too off in seconds.
             while curtime < self.tmax:
                 
-                time.sleep(G['PR_SLEEPTIME'])
+                time.sleep(G['EX_PR_SLEEPTIME'])
                 
                 curtime=cl.getTime()
 
@@ -888,7 +957,7 @@ def init_programs(G, st, CP):
 
                 # square_to_be_colorized.fillColor = (rnew, gnew, bnew)
 
-            if G['INTERACTIONMODE'] == 'master':
+            if G['EX_INTERACTIONMODE'] == 'master':
                 pass  # call staircase calculator now, that will make things ready for the next (feedback) step.
 
 
@@ -948,8 +1017,17 @@ def runTrial(trialType, G, st, CP, ex):
     # the structure of the experiment is already within the data sctructure, and I make use of that.
     for part in ex[trialType]['sequence']:
         
+        # so depending on trialType and part, we can figure out which code to send.
+        # and thus, here we 'prime' win to call_on_flip our event handler, just like before.
+        # so, what IS the message?
+                    # general
+        
+        
         CP['CURRENTPART'][0] = part
-        programs, tdur, stims = ex[trialType][part]
+        programs, tdur, stims, messages_start, messages_stop = ex[trialType][part]
+        
+        for message in messages_start:
+            G['win'].callOnFlip(G['eh'].send_message,message)    
 
         if isinstance(tdur,list):  # in case we have set t using CP (control parameter)
             tdur=tdur[0]
@@ -972,8 +1050,8 @@ def runTrial(trialType, G, st, CP, ex):
                 
 
     
-        cl.reset()
-        while cl.getTime() < tdur:
+        G['cl'].reset()
+        while G['cl'].getTime() < tdur:
             for i, stim in enumerate(stims):
                 
                 if isinstance(stim, list):  # specifically for the patches..
@@ -982,7 +1060,11 @@ def runTrial(trialType, G, st, CP, ex):
                         p.draw()
                 else:
                     stim.draw()
-            G['win'].flip()
+            G['win'].flip()  # here we send the message !!
+            
+        # now that the window flipping is done -- send 'end' markers directoy.
+        for message in messages_stop:
+            G['eh'].send_message(message)
         
 
 
@@ -991,6 +1073,15 @@ def runTrial(trialType, G, st, CP, ex):
             
 if __name__ == "__main__":
 
+    
+
+    
+    class dummy_logger():
+        def send_message(self, m):
+            print(m)
+    
+    G['eh']=dummy_logger()
+    
 
     trialopts=[]
 
@@ -1027,12 +1118,13 @@ if __name__ == "__main__":
         visual.globalVars.currWindow.close()
     
     # our clock..
-    cl=clock.Clock()
+    G['cl']=clock.Clock()
+    
 
     # G is global parameters...
     # CP is 'Control Parameters', i.e. for which-trial-next, etc.
 
-    G['GRAPHICSMODE'] = 'line'
+    G['EX_GRAPHICSMODE'] = 'line'
 
     init_window(G)
     st=make_stimuli(G, CP)
@@ -1040,7 +1132,7 @@ if __name__ == "__main__":
     ex=define_experiment(G, st, pr, CP)  # pr is passed to define_experiment, but then we won't need...
     
     
-    if G['TESTNFNOISE'] is True:
+    if G['EX_TESTNFNOISE'] is True:
         nfsignalContainer=[0]
         nfsignal_gen=pr['GenTestSignal'](G, st, CP)  # this changes the nfsignal continuously...
         nfsignal_gen.start()

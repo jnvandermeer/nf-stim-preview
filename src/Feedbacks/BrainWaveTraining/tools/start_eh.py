@@ -9,7 +9,7 @@ Created on Thu Sep 27 14:27:56 2018
 import socket
 import time
 import multiprocessing
-# import os
+import os
 # import glob
 # import re
 
@@ -35,7 +35,7 @@ def start_eh(G):
     
     mainClock=G['mainClock']
     MSGDICT=G['evcodes']
-    LOG_PATHFILE_EVENT=G['v'][LOG_PATHFILE_EVENT]
+    LOG_PATHFILE_EVENT=G['v']['LOG_PATHFILE_EVENT']
     print('----')
     print(MSGDICT)
     print('EVENT_sendParallel is: ' + str(EVENT_sendParallel))
@@ -120,6 +120,8 @@ class eventHandler(multiprocessing.Process):
         self._shutdown = multiprocessing.Event()
         
 
+        # try the dirty trick to put both logs in the same place.
+        filename = os.path.join('..', filename)
         
         self.newLogFile = create_incremental_filename(filename)
         
