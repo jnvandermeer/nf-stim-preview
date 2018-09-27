@@ -11,26 +11,39 @@ import pickle
 # visual, sound, core, data, event and logging are the crucial ones.
 import pygame
 import psychopy
-from psychopy import locale_setup, sound, gui, visual, core, data, event, logging # I guess this is the best way?
+from psychopy import locale_setup, sound, gui, visual, core, data, event, logging, clock # I guess this is the best way?
 
+
+from FeedbackBase.MostBasicPsychopyFeedback import MostBasicPsychopyFeedback
 
 # some helpers:
-from Feedbacks.EEGfMRILocalizer.efl import eventhandler
-from Feedbacks.EEGfMRILocalizer.efl import visualHelper
+# from Feedbacks.EEGfMRILocalizer.efl import eventhandler
+# from Feedbacks.EEGfMRILocalizer.efl import visualHelper
 
 # the actual experiment:
-from Feedbacks.EEGfMRILocalizer.efl.efl_v11 import * 
+# from Feedbacks.EEGfMRILocalizer.efl.efl_v11 import * # point to another (maybe more common) library - that I'll copy/paste later on from.
 
+from Feedbacks.BrainWaveTraining.tools.create_incremental_filename import create_incremental_filename
+from Feedbacks.BrainWaveTraining.tools.init_screen import init_screen
+from Feedbacks.BrainWaveTraining.tools.init_eventcodes import init_eventcodes
+from Feedbacks.BrainWaveTraining.tools.start_eh import start_eh
+
+from Feedbacks.BrainWaveTraining.ingredients.stimuli import make_stimuli
+from Feedbacks.BrainWaveTraining.ingredients.stimuli import init_programs
+from Feedbacks.BrainWaveTraining.ingredients.stimuli import define_experiment
+
+from Feedbacks.BrainWaveTraining.ingredients.stimuli import runTrial
+from Feedbacks.BrainWaveTraining.ingredients.stimuli import flatten
 
 
 # we use the Dirty Programming Method (*) to import all of psychopy's utlilities and tricks
-from FeedbackBase.MostBasicPsychopyFeedback import MostBasicPsychopyFeedback
+
 # we need this additional line - this is how we import psychopy -- why we need to write this multiple times?
 # "The downside of having to write a couple import statements per module does not outweigh the potential problems
 # introduced by trying to get around writing them." (PEP20).
 
 
-class EEGfMRILocalizer(MostBasicPsychopyFeedback):
+class BrainWaveTraining(MostBasicPsychopyFeedback):
     
     # constants to be used throughout the DEFs.
     # TRIGGER VALUES FOR THE PARALLEL PORT (MARKERS)
@@ -45,7 +58,46 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
         self.color=[0, 0, 0]
         self.fontheight=200
         
-        self.STARTKEYS=['return','t']
+        self.STARTKEYS=['return','t']           # handy for the fmri
+        
+        self.EX_THRLINEWIDTH = 2
+        self.EX_COLORGAP = 1
+        self.EX_TVSP = 0.4
+        self.EX_TPAUSE = 0.5
+        self.EX_NREGULATE = 30
+        self.EX_NTRANSFER = 10
+        self.EX_SHOWCHECKORCROSSTRANSFER = True
+        self.EX_SQUARESIZE = 0.25
+        self.EX_UPREGTEXT = 'regulate up'
+        self.EX_TESTSIGNALUPDATEINTERVAL = 0.05
+        self.EX_NREST = 10
+        self.EX_SCALING = (0.75, 0.75)          # scaling for X and Y
+        self.EX_INTERACTIONMODE = 'master'      # the stimulus does already quite a lot
+        self.EX_NOBSERVE = 10
+        self.EX_NOREGTEXT = 'do not regulate'
+        self.EX_TINSTR = 2.0
+        self.EX_THERMOCLIMS = ['c4572e', '4fc42e']
+        self.EX_GRAPHICSMODE = 'line'
+        self.EX_SHOWCHECKORCROSS = True
+        self.EX_STAIRCASEMANIPULATION = 'offset'
+        self.EX_POINTS_PENALTY = -2
+        self.EX_TESTSIGNALPERIOD = 4
+        self.EX_TMARK = 1.5
+        self.EX_TESTNFNOISE = True
+        self.EX_PATCHCOLOR = 'green'
+        self.EX_TJITT = [0.8, 1.3]
+        self.EX_TFB = 12.0
+        self.EX_POINTS_REWARD = 10
+        self.EX_PR_SLEEPTIME = 0.01
+        self.EX_TESTSIGNALTYPE = 'sin'
+        self.EX_BUTTONS = ['lctrl', 'rctrl']  # the button codes coming out of event.getStim()
+        self.EX_INSTR = 'Upregulate: Focus on moving upwards / more green'    
+        self.EX_RUNS = 5 # how many runs-of-6?
+        
+        self.LOG_PATHFILE='log/bwt.log'  # for if you want to change this...
+        self.LOG_PATHFILE_EVENT='log/evsbwt.log'  # for if you want to change this...
+                
+        # take care of our monitor-screen-display...
         self.MONITOR_PIXWIDTH=1280
         self.MONITOR_PIXHEIGHT=1024
         self.MONITOR_WIDTH=40.  # width of screen
@@ -58,36 +110,22 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
         self.MONITOR_DEGS_HEIGHTBASE=25
         self.MONITOR_FLIPHORIZONTAL = False
         self.MONITOR_FLIPVERTICAL = False
-        
+        self.MONITOR_RECORDFRAMEINTERVALS = True  # for debugging..        
         self.MONITOR_NSCREENS=2
         self.MONITOR_DISPLAYONSCREEN=1
         self.MONITOR_FULLSCR = False
         self.MONITOR_ALLOWGUI = False
         
-        self.LOGDIR='log'  # for if you want to change this...
-        self.LOGFILEBASE='efl'  # how to call our logfile --> it adds a number each time
-        self.IPADDRESS='localhost'  # port and ip to send codes towards to
-        self.PORT=6050  # which port is nice?  
-        self.BUTTONS = ['lctrl', 'rctrl']  # the button codes coming out of event.getStim()
-        self.tooSoonTime=0.0  # if it's pressed before this time --> discard + error
-        self.LPT_TRIGGER_WAIT=0.005  # how long are the LPT port pulses?
-        self.RECORDFRAMEINTERVALS = True  # for debugging..
-        self.DO_VISUAL = True
-        self.DO_AUDIO = True
-        self.DO_GNG = True
-        self.GNGSPEED = 1.0
-        self.GNG_ARROWGOESRED = True
-        self.GNG_ARROWGOESRED_DELAY = 0.25
-        self.AUDIOTONE_ERROR_COMMISSION = False
-        self.AUDIOTONE_STOP = False
-        self.VIS_SHOWOPPOSITE = False
-        self.VIS_radialFreq=6
-        self.VIS_angleFreq=6
-        self.VIS_checkerSize=1.5
-        self.VIS_checkerSpeedMultiplier=1.0
-        self.EYESCLOSED_TIME=25.
+
+        # self.LOG_FILEBASE='efl'  # how to call our logfile --> it adds a number each time
+        # self.IPADDRESS='localhost'  # port and ip to send codes towards to
+        # self.PORT=6050  # which port is nice?  
+
+        # self.tooSoonTime=0.0  # if it's pressed before this time --> discard + error
+
+
         
-        
+        self.EVENT_LPT_TRIGGER_WAIT=0.005  # how long are the LPT port pulses?        
         self.EVENT_destip='127.0.0.1'
         self.EVENT_destport=6050
         self.EVENT_LPTAddress=0x0378
@@ -99,7 +137,38 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
         self.EVENT_printToTerminal=True
         self.EVENT_printToTerminalAllowed=[0, 40]  # only allow the stops, which are < 40.
         
-        self.INSTR='Remember, respond as FAST as you can once you see the arrow.\n\n'+'However, if you hear a beep, your task is to STOP yourself '+'from pressing.\n\n'+'Stopping and Going are equally important.'
+
+        
+        
+        # Control Parameters
+        CP=dict()
+        CP['nfsignalContainer'] = [0]
+        CP['thrContainer'] = [0.5]
+        CP['TJITT'] = [1]
+        CP['CURRENTPART'] = [None]
+        CP['instruction'] = 'arrowup'  # choose between 'arrowup' and 'donotreg'
+        CP['corr_incorr'] = 'st_incorrect'  # chooose between 'st_correct' and 'st_incorrect'
+        
+        self.CP = CP
+        
+        
+        #        self.DO_VISUAL = True
+        #        self.DO_AUDIO = True
+        #        self.DO_GNG = True#
+        #        self.GNGSPEED = 1.0
+         #       self.GNG_ARROWGOESRED = True
+         #       self.GNG_ARROWGOESRED_DELAY = 0.25
+         #       self.AUDIOTONE_ERROR_COMMISSION = False
+         #       self.AUDIOTONE_STOP = False
+         #       self.VIS_SHOWOPPOSITE = False
+         #       self.VIS_radialFreq=6
+         #       self.VIS_angleFreq=6
+         #       self.VIS_checkerSize=1.5
+         #       self.VIS_checkerSpeedMultiplier=1.0
+         #       self.EYESCLOSED_TIME=25.
+        
+        
+
 
         
         
@@ -115,65 +184,88 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
         
         # do the trick -- SAVE all of those things! --> and put it in settings.pkl.
         v=dict()
-        v['STARTKEYS']                      =self.STARTKEYS
-        v['MONITOR_PIXWIDTH']               =self.MONITOR_PIXWIDTH
-        v['MONITOR_PIXHEIGHT']              =self.MONITOR_PIXHEIGHT
-        v['MONITOR_WIDTH']                  =self.MONITOR_WIDTH  # width of screen
-        v['MONITOR_HEIGHT']                 =self.MONITOR_HEIGHT  # height of screen
-        v['MONITOR_DISTANCE']               =self.MONITOR_DISTANCE  # distance to screen
-        v['MONITOR_GAMMA']                  =self.MONITOR_GAMMA
-        v['MONITOR_FPS']                    =self.MONITOR_FPS
-        v['MONITOR_USEDEGS']                =self.MONITOR_USEDEGS
-        v['MONITOR_DEGS_WIDTHBASE']         =self.MONITOR_DEGS_WIDTHBASE
-        v['MONITOR_DEGS_HEIGHTBASE']        =self.MONITOR_DEGS_HEIGHTBASE
-        v['MONITOR_FLIPHORIZONTAL']         =self.MONITOR_FLIPHORIZONTAL
-        v['MONITOR_FLIPVERTICAL']           =self.MONITOR_FLIPVERTICAL
+
+        v['caption']                        = self.caption
+        v['color']                          = self.color
+        v['fontheight']                     = self.fontheight
         
-        v['MONITOR_NSCREENS']               =self.MONITOR_NSCREENS
-        v['MONITOR_DISPLAYONSCREEN']        =self.MONITOR_DISPLAYONSCREEN
-        v['MONITOR_FULLSCR']                =self.MONITOR_FULLSCR
-        v['MONITOR_ALLOWGUI']               =self.MONITOR_ALLOWGUI
-            
-        v['LOGDIR']                         =self.LOGDIR  # for if you want to change this...
-        v['LOGFILEBASE']                    =self.LOGFILEBASE  # how to call our logfile --> it adds a number each time
-        v['IPADDRESS']                      =self.IPADDRESS  # port and ip to send codes towards to
-        v['PORT']                           =self.PORT  # which port is nice?  
-        v['BUTTONS']                        =self.BUTTONS  # the button codes coming out of event.getStim()
-        v['tooSoonTime']                    =self.tooSoonTime  # if it's pressed before this time --> discard + error
-        v['LPT_TRIGGER_WAIT']               =self.LPT_TRIGGER_WAIT  # how long are the LPT port pulses?
-        v['RECORDFRAMEINTERVALS']           =self.RECORDFRAMEINTERVALS  # for debugging..
-        v['DO_VISUAL']                      =self.DO_VISUAL
-        v['DO_AUDIO']                       =self.DO_AUDIO
-        v['DO_GNG']                         =self.DO_GNG
-        v['GNGSPEED']                       =self.GNGSPEED
-        v['GNG_ARROWGOESRED']               =self.GNG_ARROWGOESRED
-        v['GNG_ARROWGOESRED_DELAY']         =self.GNG_ARROWGOESRED_DELAY
-        v['AUDIOTONE_ERROR_COMMISSION']     =self.AUDIOTONE_ERROR_COMMISSION
-        v['AUDIOTONE_STOP']                 =self.AUDIOTONE_STOP
-        v['VIS_SHOWOPPOSITE']               =self.VIS_SHOWOPPOSITE
-        v['VIS_radialFreq']                 =self.VIS_radialFreq
-        v['VIS_angleFreq']                  =self.VIS_angleFreq
-        v['VIS_checkerSize']                =self.VIS_checkerSize
-        v['VIS_checkerSpeedMultiplier']     =self.VIS_checkerSpeedMultiplier
-        v['EYESCLOSED_TIME']                =self.EYESCLOSED_TIME
+        v['STARTKEYS']                      = self.STARTKEYS
         
-        v['EVENT_destip']                   =self.EVENT_destip
-        v['EVENT_destport']                 =self.EVENT_destport
-        v['EVENT_LPTAddress']               =self.EVENT_LPTAddress
-        v['EVENT_LPTTrigWaitTime']          =self.EVENT_LPTTrigWaitTime
-        v['EVENT_TRIGLOG']                  =self.EVENT_TRIGLOG
-        v['EVENT_sendParallel']             =self.EVENT_sendParallel
-        v['EVENT_sendTcpIp']                =self.EVENT_sendTcpIp
-        v['EVENT_sendLogFile']              =self.EVENT_sendLogFile
-        v['EVENT_printToTerminal']          =self.EVENT_printToTerminal
-        v['EVENT_printToTerminalAllowed']   =self.EVENT_printToTerminalAllowed  # only allow the stops, which are < 40.
-        
-        v['INSTR']                          =self.INSTR
+        v['EX_THRLINEWIDTH']                = self.EX_THRLINEWIDTH
+        v['EX_COLORGAP']                    = self.EX_COLORGAP
+        v['EX_TVSP']                        = self.EX_TVSP
+        v['EX_TPAUSE']                      = self.EX_TPAUSE
+        v['EX_NREGULATE']                   = self.EX_NREGULATE
+        v['EX_NTRANSFER']                   = self.EX_NTRANSFER
+        v['EX_SHOWCHECKORCROSSTRANSFER']    = self.EX_SHOWCHECKORCROSSTRANSFER
+        v['EX_SQUARESIZE']                  = self.EX_SQUARESIZE
+        v['EX_UPREGTEXT']                   = self.EX_UPREGTEXT
+        v['EX_TESTSIGNALUPDATEINTERVAL']    = self.EX_TESTSIGNALUPDATEINTERVAL
+        v['EX_NREST']                       = self.EX_NREST
+        v['EX_SCALING']                     = self.EX_SCALING
+        v['EX_INTERACTIONMODE']             = self.EX_INTERACTIONMODE
+        v['EX_NOBSERVE']                    = self.EX_NOBSERVE
+        v['EX_NOREGTEXT']                   = self.EX_NOREGTEXT
+        v['EX_TINSTR']                      = self.EX_TINSTR
+        v['EX_THERMOCLIMS']                 = self.EX_THERMOCLIMS
+        v['EX_GRAPHICSMODE']                = self.EX_GRAPHICSMODE
+        v['EX_SHOWCHECKORCROSS']            = self.EX_SHOWCHECKORCROSS
+        v['EX_STAIRCASEMANIPULATION']       = self.EX_STAIRCASEMANIPULATION
+        v['EX_POINTS_PENALTY']              = self.EX_POINTS_PENALTY
+        v['EX_TESTSIGNALPERIOD']            = self.EX_TESTSIGNALPERIOD
+        v['EX_TMARK']                       = self.EX_TMARK
+        v['EX_TESTNFNOISE']                 = self.EX_TESTNFNOISE
+        v['EX_PATCHCOLOR']                  = self.EX_PATCHCOLOR
+        v['EX_TJITT']                       = self.EX_TJITT
+        v['EX_TFB']                         = self.EX_TFB
+        v['EX_POINTS_REWARD']               = self.EX_POINTS_REWARD
+        v['EX_PR_SLEEPTIME']                = self.EX_PR_SLEEPTIME
+        v['EX_TESTSIGNALTYPE']              = self.EX_TESTSIGNALTYPE
+        v['EX_BUTTONS']                     = self.EX_BUTTONS
+        v['EX_INSTR']                       = self.EX_INSTR
+        v['EX_RUNS']                        = self.EX_RUNS
+
+
+        v['MONITOR_PIXWIDTH']               = self.MONITOR_PIXWIDTH
+        v['MONITOR_PIXHEIGHT']              = self.MONITOR_PIXHEIGHT
+        v['MONITOR_WIDTH']                  = self.MONITOR_WIDTH
+        v['MONITOR_HEIGHT']                 = self.MONITOR_HEIGHT
+        v['MONITOR_DISTANCE']               = self.MONITOR_DISTANCE
+        v['MONITOR_GAMMA']                  = self.MONITOR_GAMMA
+        v['MONITOR_FPS']                    = self.MONITOR_FPS
+        v['MONITOR_USEDEGS']                = self.MONITOR_USEDEGS
+        v['MONITOR_DEGS_WIDTHBASE']         = self.MONITOR_DEGS_WIDTHBASE
+        v['MONITOR_DEGS_HEIGHTBASE']        = self.MONITOR_DEGS_HEIGHTBASE
+        v['MONITOR_FLIPHORIZONTAL']         = self.MONITOR_FLIPHORIZONTAL
+        v['MONITOR_FLIPVERTICAL']           = self.MONITOR_FLIPVERTICAL
+        v['MONITOR_RECORDFRAMEINTERVALS']   = self.MONITOR_RECORDFRAMEINTERVALS
+        v['MONITOR_NSCREENS']               = self.MONITOR_NSCREENS
+        v['MONITOR_DISPLAYONSCREEN']        = self.MONITOR_DISPLAYONSCREEN
+        v['MONITOR_FULLSCR']                = self.MONITOR_FULLSCR
+        v['MONITOR_ALLOWGUI']               = self.MONITOR_ALLOWGUI
+
+        v['LOG_PATHFILE']                   = self.LOG_PATHFILE
+        v['LOG_PATHFILE_EVENT']             = self.LOG_PATHFILE_EVENT
+
+        v['EVENT_LPT_TRIGGER_WAIT']         = self.EVENT_LPT_TRIGGER_WAIT
+        v['EVENT_destip']                   = self.EVENT_destip
+        v['EVENT_destport']                 = self.EVENT_destport
+        v['EVENT_LPTAddress']               = self.EVENT_LPTAddress
+        v['EVENT_LPTTrigWaitTime']          = self.EVENT_LPTTrigWaitTime
+        v['EVENT_TRIGLOG']                  = self.EVENT_TRIGLOG
+        v['EVENT_sendParallel']             = self.EVENT_sendParallel
+        v['EVENT_sendTcpIp']                = self.EVENT_sendTcpIp
+        v['EVENT_sendLogFile']              = self.EVENT_sendLogFile
+        v['EVENT_printToTerminal']          = self.EVENT_printToTerminal
+        v['EVENT_printToTerminalAllowed']   = self.EVENT_printToTerminalAllowed
+
 
 
 
         G=dict()
         G['v']=v
+        
+        CP=self.CP # control parameters...
         #
         # global variable with references to desired memory locations is easier to pass around.
         mainClock=clock.Clock()
@@ -181,130 +273,113 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
         
         self.G=G  # try this..
         
+        # we don't need to set them here again, I think.
         
         # doing all of the init stuff:
-        G=init_screen(G)
-        G=init_logfile(G)
-        G=init_stimuli(G)
-        G=init_eventcodes(G)
-        
-        G=init_gng(G)
-        
-        G=init_reset_clock(G)
-        
-        G=init_audio(G)
-        G=init_visual(G)
-        
-        G=start_ev(G)
-        
-        # load in the settings file that is near THIS script!
-        # the settings will also be written in the logfile
-        # come to think of it -- probably this isn't necessary either.
-        # settings and constants can be put into a file liek that, right?
-        # --> test
-        # OK, not if you're evaluating based on those constants like I try to do here!
-        # so save/load to settings file seems to be the way to go.
-        #settingsfile=os.path.join(os.path.dirname(os.path.realpath(__file__)),'settings.pkl')
-        #with open(settingsfile,'wb') as f:
-        #    pickle.dump(v, f)
-        #    time.sleep(0.5)
-        
-        # we now just need to pass it on to G.
-        
-        
-        # remove from the main script copy/paste all of those __init__ variables, so things will look better.
-        # so it's in directory efl, and called "efl_v6.py"
+        G=init_screen(G)  # we need to do this
 
-        # import efl.efl_v6
+        # this takes care of the logging.
+        logging.setDefaultClock(G['mainClock'])
+        newLogFile = create_incremental_filename(G['v']['LOG_PATHFILE'])
+        #expLogger = logging.LogFile(newLogFile, logging.EXP) # the correct loglevel should be EXP!
+        logging.LogFile(newLogFile, logging.EXP) # the correct loglevel should be EXP!
+        for key in G['v'].keys():
+            logging.data("{key}: {value}".format(key=key, value=G['v'][key]))
 
+        
+
+        G=init_eventcodes(G)  # and this??
+        G=start_eh(G)
+
+        
+        st=make_stimuli(G, CP)
+        pr=init_programs(G, st, CP)
+
+        ex=define_experiment(G, st, pr, CP)  # pr is passed to define_experiment, but then we won't need...
     
-        # now -- 
+    
+        if G['EX_TESTNFNOISE'] is True:
+            # nfsignalContainer=[0]
+            nfsignal_gen=pr['GenTestSignal'](G, st, CP)  # this changes the nfsignal continuously...
+            nfsignal_gen.start()
+        
+        self.st=st
+        self.ex=ex
+      
+        
+        # take care of the randomization(s)...
+        trialopts=[]
+        
+        trialopts.append([1,1,2,1,3,4])
+        trialopts.append([1,1,2,1,4,3])
+        trialopts.append([1,1,2,3,1,4])
+        trialopts.append([1,1,2,4,1,3])
+        trialopts.append([1,1,3,1,2,4])
+        trialopts.append([1,1,3,1,4,2])
+        trialopts.append([1,1,3,2,1,4])
+        trialopts.append([1,1,3,4,1,2])
+        trialopts.append([1,1,4,1,3,2])
+        trialopts.append([1,1,4,1,2,3])
+        trialopts.append([1,1,4,3,1,2])
+        trialopts.append([1,1,4,2,1,3])
+        trialopts.append([1,2,1,4,1,3])
+        trialopts.append([1,2,1,3,1,4])
+        trialopts.append([1,3,1,4,1,2])
+        trialopts.append([1,3,1,2,1,4])
+        trialopts.append([1,4,1,2,1,3])
+        trialopts.append([1,4,1,3,1,2])
+        
+        random.shuffle(trialopts)
+        random.shuffle(trialopts)
+        random.shuffle(trialopts)   # 3 time shuffle, for good luck :-)
+                                    # computational anathema and heretic!
+        
+        my_trial_sequence = flatten(trialopts[0:G['v']['EX_RUNS']])  # we do 5 of them.
+        my_trial_definitions = {1:'train', 2:'transfer', 3:'observe', 4:'rest'}
+        
+        self.runlist = iter([my_trial_definitions[i] for i in my_trial_sequence])
+        
+        logging.flush()
         
         
-        #        # so.. now you should have self.win, which is the window -- draw stuff on that, etc.
-        #        # THIS ... is where we could 'draw' all kinds of stuff onto the window.
-        #        # we COULD also, define a 'text output' window placed somewhere else, right?
-        #        msg=visual.TextStim(self.win, text="Hallo!!")
-        #
-        #        # this will define all of the stuff we're going to use later on. So it's fine if this is big.
-        #
-        #        self.upperThr = visual.Rect(win=self.win, name='upperThr', width=0.25, height=0.02, \
-        #                              ori=0, pos=(0, 0.5),\
-        #                              lineWidth=1, lineColor=[1,1,1], lineColorSpace='rgb', \
-        #                              fillColor=[1,1,1], fillColorSpace='rgb',\
-        #                              opacity=1, depth=0.0, interpolate=True)
-        #
-        #        self.lowerThr = visual.Rect(win=self.win, name='lowerThr', width=0.25, height=0.02,\
-        #                              ori=0, pos=(0, -0.5),\
-        #                              lineWidth=1, lineColor=[1,1,1], lineColorSpace='rgb',\
-        #                              fillColor=[1,1,1], fillColorSpace='rgb',\
-        #                              opacity=1, depth=0.0, interpolate=True)
-        #
-        #        self.levelBar = visual.Rect(win=self.win, name='levelBar', width=0.20, height=0.04,\
-        #                              ori=0, pos=(0, -0),\
-        #                              lineWidth=1, lineColor=[1,1,1], lineColorSpace='rgb',\
-        #                              fillColor=[1,1,1], fillColorSpace='rgb',\
-        #                              opacity=1, depth=0.0, interpolate=True)
-        #
-        #        # NFPos = -0.5 # -0.25
-        #        self.draw_nf_stimulus(self.NFPos)
-        #        self.win.flip()
-        #        
-        # i want it to stop here so I can debug?
-        #import pdb
-        # pdb.set_trace()
+        
 
     # this is called AFTER main loop...
     def post_mainloop(self):
         MostBasicPsychopyFeedback.post_mainloop(self)
+        
+        self.G['eh'].shutdown()
+        self.G['eh'].join()
+        self.G['win'].close()
+        logging.flush()
+        
 
     # this always gets called, even paused.. -- UNTIL self.on_stop() is called. this will exit the main loop.
     # a 'tick' == ONE passage through the main loop (which is a 'while True' loop, basically...)
+    
+    # since tick will be called repeatedly, this is fine.
     def tick(self):
 
         # getting in the variables:
         G=self.G
+        ex=self.ex
+        st=self.st
+        CP=self.CP
         # from efl.efl_v6 import *
         # put everything here, which is in from __name__ == "__main__"
         # so this is one 'tick', but that's OK - one tick is all we need from pyff.
-        
-        try:
-            
-            wait_for_key(G)
-            test_buttons(G)
-            instr_screen0(G)
-            eo_stim(G)
-            ec_stim(G)
-            logging.flush()
 
-            
-            test_buttons(G)
-            instr_screen(G)
-            logging.flush()
-            
-            # print(G['eh'].is_alive())
-            # print('----><----')
-            # G['eh'].send_message('boe!')
-            # print('----><----')
-            run_main_loop(G)
-            logging.flush()
-        
-            eo_stim(G)
-            ec_stim(G)
-            end_task(G)
+        try:
+            trialType=self.runlist.next()
+
+            runTrial(trialType, G, st, CP, ex)
             logging.flush()
             
             
-            # close window here.
-            G['win'].close()
-            logging.flush()
-            
-            
-        except KeyboardInterrupt:
-            G['eh'].shutdown()
-            G['eh'].join()
-            G['win'].close()
-            logging.flush()
+        except StopIteration:
+            # stop the experiment when the iterable is ready.
+            self.on_stop()
+
         
         # here, we should call the main script 'efl'.
         
@@ -320,11 +395,13 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
 
     # this gets called ONLY -- while on play mode
     def play_tick(self):
+        print('I Resumed Play!')
         pass
     
     # this gets called ONLY -- while on pause mode
     def pause_tick(self):
-        pass
+        print('paused!')
+        # pass
     
     # one could define several other tick methods for different kinds of behaviours.
     
@@ -332,10 +409,21 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
     # this function WILL get called whenever I send over a 'control' event -- which is..
     # f.e. the NF data (whatever variable it is!)
     def on_control_event(self, data):
-        pass
         #self.logger.debug("on_control_event: %s" % str(data))
         #self.NFPos = data["data"]
         # but we can change properties of the data --> so can draw stff!
+        
+        
+        for key in data.keys():
+            self.CP[key] = data[key]
+
+        
+        #CP['nfsignalContainer'] = [0]
+        #CP['thrContainer'] = [0.5]
+        #CP['TJITT'] = [1]
+        #CP['CURRENTPART'] = [None]
+        #CP['instruction'] = 'arrowup'  # choose between 'arrowup' and 'donotreg'
+        #CP['corr_incorr'] = 'st_incorrect'  # chooose between 'st_correct' and 'st_incorrect'        
         
 
         # this function WILL get called whenever I do anything like 'play','pause','quit', etc.

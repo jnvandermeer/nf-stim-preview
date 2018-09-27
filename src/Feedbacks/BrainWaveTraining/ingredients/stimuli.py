@@ -843,7 +843,7 @@ def init_programs(G, st, CP):
 
 
 
- # we WILL start the thread to do this thing.
+    # we WILL start the thread to do this thing.
     class SquareCalculations(threading.Thread):
         def __init__(self, G, st, CP):
             '''
@@ -1032,7 +1032,7 @@ if __name__ == "__main__":
     # G is global parameters...
     # CP is 'Control Parameters', i.e. for which-trial-next, etc.
 
-    G['GRAPHICSMODE'] = 'square'
+    G['GRAPHICSMODE'] = 'line'
 
     init_window(G)
     st=make_stimuli(G, CP)
