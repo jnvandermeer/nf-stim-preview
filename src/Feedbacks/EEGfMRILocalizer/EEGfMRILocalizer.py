@@ -271,6 +271,9 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
         try:
             
             wait_for_key(G)
+            
+            measure_artifact_program(G)
+            
             test_buttons(G)
             instr_screen0(G)
             eo_stim(G)
