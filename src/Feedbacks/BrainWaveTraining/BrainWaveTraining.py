@@ -8,6 +8,10 @@ from psychopy import clock, event, data, logging
 
 from FeedbackBase.MostBasicPsychopyFeedback import MostBasicPsychopyFeedback
 
+
+
+
+
 # some helpers:
 # from Feedbacks.EEGfMRILocalizer.efl import eventhandler
 # from Feedbacks.EEGfMRILocalizer.efl import visualHelper
@@ -20,12 +24,22 @@ from Feedbacks.BrainWaveTraining.tools.init_screen import init_screen
 from Feedbacks.BrainWaveTraining.tools.init_eventcodes import init_eventcodes
 from Feedbacks.BrainWaveTraining.tools.start_eh import start_eh
 
-from Feedbacks.BrainWaveTraining.ingredients.stimuli import make_stimuli
-from Feedbacks.BrainWaveTraining.ingredients.stimuli import init_programs
-from Feedbacks.BrainWaveTraining.ingredients.stimuli import define_experiment
+from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import make_stimuli
+from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import init_programs
+from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import define_experiment
 
-from Feedbacks.BrainWaveTraining.ingredients.stimuli import runTrial
-from Feedbacks.BrainWaveTraining.ingredients.stimuli import flatten
+from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import runTrial
+from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import flatten
+
+
+
+
+
+# let's try using async to keep all things into the Main Thread.
+import trollius as asyncio
+from trollius import From
+from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import handle_exception_pr
+from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import handle_exception
 
 
 # get the pause screen!
@@ -301,11 +315,6 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
 
         ex=define_experiment(G, st, pr, CP)  # pr is passed to define_experiment, but then we won't need...
     
-    
-        if G['EX_TESTNFNOISE'] is True:
-            # nfsignalContainer=[0]
-            nfsignal_gen=pr['GenTestSignal'](G, st, CP)  # this changes the nfsignal continuously...
-            nfsignal_gen.start()
         
         self.st=st
         self.ex=ex
@@ -341,8 +350,20 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         my_trial_sequence = flatten(trialopts[0:G['v']['EX_RUNS']])  # we do 5 of them.
         my_trial_definitions = {1:'train', 2:'transfer', 3:'observe', 4:'rest'}
         
-        self.runlist = iter([my_trial_definitions[i] for i in my_trial_sequence])
+        # so to debug, just run tasks_dbg instead of tasks.
+        for t_i in my_trial_sequence:
+                self.runlist = iter([my_trial_definitions[i] for i in my_trial_sequence])
+    
         
+        # the ev loop we're going to be using..
+        loop=asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        self.loop=loop
+        
+        
+        if G['EX_TESTNFNOISE'] is True:
+            self.loop.create_task(pr['GenTestSignal'](G, st, CP))
+
         logging.flush()
         G['logging']=logging
         
@@ -373,14 +394,19 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         ex=self.ex
         st=self.st
         CP=self.CP
+        loop=self.loop
         # from efl.efl_v6 import *
         # put everything here, which is in from __name__ == "__main__"
         # so this is one 'tick', but that's OK - one tick is all we need from pyff.
 
         try:
+            
             trialType=self.runlist.next()
-
-            runTrial(trialType, G, st, CP, ex)
+            print(trialType)
+            print(CP['TJITT'][0])
+            # trialType, G, st, CP, ex, loop
+            self.loop.run_until_complete(asyncio.wait([asyncio.async(handle_exception(runTrial,trialType, G, st, CP, ex, loop))]))   
+            
             G['logging'].flush()
             
             
