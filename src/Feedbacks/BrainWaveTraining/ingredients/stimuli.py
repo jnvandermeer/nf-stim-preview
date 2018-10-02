@@ -61,9 +61,9 @@ G['EX_TJITT']   = [0.8, 1.3]
 G['EX_TESTNFNOISE'] = True  # for checkign whether everything works...
 G['EX_TESTSIGNALTYPE'] = 'sin'  # or random
 G['EX_TESTSIGNALPERIOD'] = 4  # seconds
-G['EX_TESTSIGNALUPDATEINTERVAL'] = 0.05   # make sure it's not the same.
+G['EX_TESTSIGNALUPDATEINTERVAL'] = 0.001   # make sure it's not the same.
 
-G['EX_GRAPHICSMODE'] = 'line'  # what kind of stimulus?
+G['EX_GRAPHICSMODE'] = 'thermo'  # what kind of stimulus?
 G['EX_INTERACTIONMODE'] = 'master'  # now it will calculate succes and failure itself based on passed-on parameters in G
                                  # also, it will listen to what kind of trial needs to be run depending on what's passed on.
                                  # slave will be that it's dependent on the signals coming in from the Master Computer.
@@ -445,13 +445,13 @@ def define_experiment(G, st, pr, CP):
     ex['thermo']['rest']        = copy.copy(ex['line']['rest'])
 
 
-    ex['thermo']['train']['feedback']           = ([[pr['ThermoCalculations'], 'start']], TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer']])
-    ex['thermo']['train']['veryshortpause1']    = ([],                                    TVSP,   [st['background'], st['thermo_lines'], st['thermo_thermometer']])
-    ex['thermo']['observe']['feedback']         = ([[pr['ThermoCalculations'], 'start']], TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer']])
-    ex['thermo']['observe']['veryshortpause']   = ([],                                    TVSP,   [st['background'], st['thermo_lines'], st['thermo_thermometer']])
+    ex['thermo']['train']['feedback']           = ([[pr['ThermoCalculations'], 'start']], TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer']],                 ['bFB','btrain'], ['eFB','etrain'])
+    ex['thermo']['train']['veryshortpause1']    = ([],                                    TVSP,   [st['background'], st['thermo_lines'], st['thermo_thermometer']],                 [], [])
+    ex['thermo']['observe']['feedback']         = ([[pr['ThermoCalculations'], 'start']], TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer']],                 ['bFB','bobserve'], ['eFB','eobserve'])
+    ex['thermo']['observe']['veryshortpause']   = ([],                                    TVSP,   [st['background'], st['thermo_lines'], st['thermo_thermometer']],                 [], [])
 
-    ex['thermo']['transfer']['feedback']        = ([[pr['ThermoCheck'], 'call']],         TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer_silent']])
-    ex['thermo']['rest']['feedback']            = ([[pr['ThermoCheck'], 'call']],         TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer_silent']])
+    ex['thermo']['transfer']['feedback']        = ([[pr['ThermoCheck'], 'call']],         TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer_silent']],          ['bFB','btransfer'], ['eFB','etransfer'])
+    ex['thermo']['rest']['feedback']            = ([[pr['ThermoCheck'], 'call']],         TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer_silent']],          ['bFB', 'brest'], ['eFB', 'erest'])
 
 
 
@@ -463,13 +463,13 @@ def define_experiment(G, st, pr, CP):
     ex['square']['rest']        = copy.copy(ex['line']['rest'])
 
 
-    ex['square']['train']['feedback']           = ([[pr['SquareCalculations'], 'start']], TFB,    [st['background'], st['square'], st['square_focus']])
-    ex['square']['train']['veryshortpause1']    = ([],                                    TVSP,   [st['background'], st['square'], st['square_focus']])
-    ex['square']['observe']['feedback']         = ([[pr['SquareCalculations'], 'start']], TFB,    [st['background'], st['square'], st['square_focus']])
-    ex['square']['observe']['veryshortpause']   = ([],                                    TVSP,   [st['background'], st['square'], st['square_focus']])
+    ex['square']['train']['feedback']           = ([[pr['SquareCalculations'], 'start']], TFB,    [st['background'], st['square'], st['square_focus']],                             ['bFB','btrain'], ['eFB','etrain'])
+    ex['square']['train']['veryshortpause1']    = ([],                                    TVSP,   [st['background'], st['square'], st['square_focus']],                             [], [])
+    ex['square']['observe']['feedback']         = ([[pr['SquareCalculations'], 'start']], TFB,    [st['background'], st['square'], st['square_focus']],                             ['bFB','bobserve'], ['eFB','eobserve'])
+    ex['square']['observe']['veryshortpause']   = ([],                                    TVSP,   [st['background'], st['square'], st['square_focus']],                             [], [])
 
-    ex['square']['transfer']['feedback']        = ([],                                    TFB,    [st['background'], st['square_silent'], st['square_focus']])  # no need to further calibrate a grey square, like with line and thermo.
-    ex['square']['rest']['feedback']            = ([],                                    TFB,    [st['background'], st['square_silent'], st['square_focus']])  # no need to further calibrate a grey square, like with line and thermo.
+    ex['square']['transfer']['feedback']        = ([],                                    TFB,    [st['background'], st['square_silent'], st['square_focus']],                      ['bFB','btransfer'], ['eFB','etransfer'])  # no need to further calibrate a grey square, like with line and thermo.
+    ex['square']['rest']['feedback']            = ([],                                    TFB,    [st['background'], st['square_silent'], st['square_focus']],                      ['bFB', 'brest'], ['eFB', 'erest'])  # no need to further calibrate a grey square, like with line and thermo.
 
 
 
@@ -680,8 +680,8 @@ def init_programs(G, st, CP):
                 patch_vert=[]
                 ABOVE_PREV = True
                 patch_vert.append((-1,  self.thrContainer[0]      ))
-                patch_vert.append((-1,  self.nfvalueContainer[0]  ))
-                patch_vert.append((-1,  self.thrContainer[0]      ))
+                patch_vert.append((-1+0.0001,  self.nfvalueContainer[0]  ))
+                patch_vert.append((-1+0.0001,  self.thrContainer[0]      ))
     
                 newpatch = visual.ShapeStim(self.win, vertices=patch_vert, fillColor=self.patch_color, lineWidth=0)
                 patches.append(newpatch)
@@ -1124,7 +1124,7 @@ if __name__ == "__main__":
     # G is global parameters...
     # CP is 'Control Parameters', i.e. for which-trial-next, etc.
 
-    G['EX_GRAPHICSMODE'] = 'line'
+    G['EX_GRAPHICSMODE'] = 'thermo'
 
     init_window(G)
     st=make_stimuli(G, CP)
