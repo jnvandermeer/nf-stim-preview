@@ -664,6 +664,7 @@ def init_eventcodes(G):
             'jaw':244,
             'eyebrows':245,
             'swallow':246,
+            'cheeks':247,
 
                 
             }        
@@ -2135,7 +2136,7 @@ def measure_artifact_program(G):
         
     
     # ask for tense of neck muchles
-    t3=visual.TextStim(win, 'Tense your neck muscles (left) (4 seconds)',pos=(0.0, 0.0), height=0.12,units='norm')
+    t3=visual.TextStim(win, 'Tense your neck muscles (left) (4 seconds)',pos=(0.0, 0.0), height=0.08,units='norm')
     cl.reset()
     eh.send_message('neckl')
     while cl.getTime() < 4.0:
@@ -2150,7 +2151,7 @@ def measure_artifact_program(G):
         
 
     # ask for tense of neck muchles
-    t4=visual.TextStim(win, 'Tense your neck muscles (right) (4 seconds)',pos=(0.0, 0.0), height=0.12,units='norm')
+    t4=visual.TextStim(win, 'Tense your neck muscles (right) (4 seconds)',pos=(0.0, 0.0), height=0.08,units='norm')
     cl.reset()
     eh.send_message('neckr')
     while cl.getTime() < 4.0:
@@ -2164,7 +2165,7 @@ def measure_artifact_program(G):
 
         
     # ask for tense of neck muchles
-    t5=visual.TextStim(win, 'Tense your jaw muscles (clench teeth) (4 seconds)',pos=(0.0, 0.0), height=0.12,units='norm')
+    t5=visual.TextStim(win, 'Tense your jaw muscles (clench teeth) (4 seconds)',pos=(0.0, 0.0), height=0.08,units='norm')
     cl.reset()
     eh.send_message('jaw')
     while cl.getTime() < 3.5:
@@ -2178,7 +2179,7 @@ def measure_artifact_program(G):
 
 
     # ask for tense of neck muchles
-    t6=visual.TextStim(win, 'Frown your eyebrows (4 seconds)',pos=(0.0, 0.0), height=0.12,units='norm')
+    t6=visual.TextStim(win, 'Frown your eyebrows (4 seconds)',pos=(0.0, 0.0), height=0.08,units='norm')
     cl.reset()
     eh.send_message('eyebrows')
     while cl.getTime() < 4.0:
@@ -2201,14 +2202,28 @@ def measure_artifact_program(G):
     cl.reset()
     while cl.getTime() < 1.5:
         win.flip()
+        
+        
+    # ask for tense of neck muchles
+    t8=visual.TextStim(win, 'Tense muscles in cheecks (4 seconds)...',pos=(0.0, 0.0), height=0.08,units='norm')
+    cl.reset()
+    eh.send_message('cheeks')
+    while cl.getTime() < 3.3:
+        t8.draw()
+        win.flip()        
+
+    cl.reset()
+    while cl.getTime() < 1.5:
+        win.flip()
+
 
 
         
     # ask for tense of neck muchles
-    t8=visual.TextStim(win, 'Thank you, we continue with main experiment!',pos=(0.0, 0.0), height=0.12,units='norm')
+    t9=visual.TextStim(win, 'Thank you, we continue with main experiment!',pos=(0.0, 0.0), height=0.08,units='norm')
     cl.reset()
     while cl.getTime() < 3.5:
-        t8.draw()
+        t9.draw()
         win.flip()
         
 
