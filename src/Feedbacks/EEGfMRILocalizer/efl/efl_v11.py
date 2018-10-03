@@ -2191,7 +2191,7 @@ def measure_artifact_program(G):
         
         
     # ask for tense of neck muchles
-    t7=visual.TextStim(win, 'Deep Swallow Once..',pos=(0.0, 0.0), height=0.12,units='norm')
+    t7=visual.TextStim(win, 'Swallow movement (once)..',pos=(0.0, 0.0), height=0.12,units='norm')
     cl.reset()
     eh.send_message('swallow')
     while cl.getTime() < 3.0:
