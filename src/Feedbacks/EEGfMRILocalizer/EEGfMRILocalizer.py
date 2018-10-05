@@ -19,7 +19,7 @@ from Feedbacks.EEGfMRILocalizer.efl import eventhandler
 from Feedbacks.EEGfMRILocalizer.efl import visualHelper
 
 # the actual experiment:
-from Feedbacks.EEGfMRILocalizer.efl.efl_v11 import * 
+from Feedbacks.EEGfMRILocalizer.efl.efl_v12 import * 
 
 
 

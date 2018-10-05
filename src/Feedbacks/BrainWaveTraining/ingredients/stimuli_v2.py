@@ -23,21 +23,27 @@ import sys
 import traceback
 
 
-from psychopy import visual, clock
+from psychopy import visual, clock, data
 import numpy as np
 import random
 import threading
 import time
 import copy
+import re
 
 
 # let's try using async to keep all things into the Main Thread.
 import trollius as asyncio
 from trollius import From
 
+if __name__ == "__main__":
+    from create_incremental_filename import create_incremental_filename
+else:
+    from Feedbacks.BrainWaveTraining.tools.create_incremental_filename import create_incremental_filename    
 
 
-#%% He[per functions]
+
+#%% He[per functions
 def flatten(lst):
     new_lst = []
     flatten_helper(lst, new_lst)
@@ -105,6 +111,17 @@ G['EX_COLORGAP'] = 1  # the gap between colors when thr is passed. -- uses the c
 G['EX_PR_SLEEPTIME'] = 0.01 # 0.01  # how long do we 'sleep' in our main program threads? (screen update is ~0.0016 seconds)
 
 
+# so these are NOW control parameters:
+G['EX_TUNING_TYPE'] = 'thr'  # alternatives are 'linear', and maybe 'fancy'
+G['EX_TUNING_PARAMS'] = [0.5, 0.0]  # linear requires a slope and offset. - eill not be used if it's not 'linear'
+G['EX_WIN_CONDITION'] = 'time_above_thr'
+G['EX_WIN_PARAMS'] = [0.25]  # 25 % of the time, it needs to be above the threshold...
+
+G['EX_NUMBEROFSETS'] = 6  # how long (sets of 6) do we wish our experiment to have?? Determines also our staircases.
+G['EX_MIXOFSETS'] = {'train':3, 'transfer':1, 'observe':1, 'rest':1}
+G['EX_STAIRIDENTIFIER'] = '0001'  # needed to keep track of the staircases.
+G['EX_XorV_RESET_POINTS'] = False  # at the start of the day --> this should be True.
+
 
 G['MONITOR_PIXWIDTH']=1280
 G['MONITOR_PIXHEIGHT']=1024
@@ -135,6 +152,11 @@ CP['TJITT'] = [1]
 CP['CURRENTPART'] = [None]
 CP['instruction'] = 'arrowup'  # choose between 'arrowup' and 'donotreg'
 CP['corr_incorr'] = 'st_incorrect'  # chooose between 'st_correct' and 'st_incorrect'
+CP['TUNING_TYPE'] = G['EX_TUNING_TYPE']  # copy/paste into CP, to be (changed) later during the experiment...
+CP['TUNING_PARAMS'] = G['EX_TUNING_PARAMS']  # same here -- but, it is a list.
+CP['TrialType'] = [None]
+CP['WIN_CONDITION'] = G['EX_WIN_CONDITION']
+CP['WIN_PARAMS'] = G['EX_WIN_PARAMS'] 
 
 
 
@@ -381,9 +403,266 @@ def make_stimuli(G, CP):
     return st
 
 
+#%% TUNING AND WINNING
+    
+
+
+
+def calculate_total_points(G):
+    
+    # think of a way to calculate the total # of points.
+    # perhaps, we add in the transfer list, too.
+    
+
+    
+    EX_POINTS_REWARD = G['EX_POINTS_REWARD']  #= 10
+    EX_POINTS_PENALTY = G['EX_POINTS_PENALTY']  #= -2
+    pass
+
+
+    # use this to figure out total points...:
+    if G['EX_SHOWCHECKORCROSSTRANSFER']:
+        pass
+
+    responses_train = G['staircases']['train'].otherData['list_up_till_now'][-1]
+    responses_transfer = G['staircases']['transfer'].otherData['list_up_till_now'][-1]
+
+
+    return 0
+
+
+
+def tuning(CP, y):
+    """ This function returns a tuned version of the input value, according to
+    what is defined in the G(lobal) variable setup
+    There should be a 'tuning type' and a 'tuning intensity'
+    """
+    
+    # these can be set, too, by the BCI system, using control parameters...
+    tuningType = CP['TUNING_TYPE']
+    tuningParams = CP['TUNING_PARAMS']
+    
+    
+    # if nothing matches -- just return y.
+    yn = y
+    
+    
+    if tuningType == 'linear':
+        
+        slope = tuningParams[0]
+        offset = tuningParams[1]
+        
+        yn = y * slope + offset
+    
+    if tuningType == 'fancy':
+        raise NotImplementedError
+
+
+    #if tuningType == 'threshold':
+
+
+    
+    return yn
+
+
+
+
+def check_win_condition(CP, times, ydata, thrdata):
+    """ this function check whether you did well on a trial, as defined...
+    with the CP (control parameters)
+    
+    There IS a smoothness assumption here. Things should go slower than:
+        - EX_PR_SLEEPTIME
+        - FPS of the Monitor
+        progably at least twice as slow.
+        
+    If that's the case (likely, but if unattended could cause some bugs)
+    then we can safely ignore the fact that some points are valued more than
+    other points (since they are not evenly temporally spaced)
+    .. for the purposes of whether things are above the THR
+    .. and also for purposes of calculating an area-above-the-threshold
+    """
+    
+    if len(times) != len(ydata):
+        raise Exception('times is not equal in length to ydata : something went wrong in check_win_condition')
+        
+        
+    winCondition = CP['WIN_CONDITION']
+    winConditionParams = CP['WIN_PARAMS']
+    
+    # so we are NOT going to change the thr during the experiment.. or are we?
+    # in case we do: we need another list of thr values, too.
+    
+    outcome = False
+    outcomebool = 0
+    
+    if winCondition == 'time_above_thr':
+        totTime = max(times) - min(times)
+        
+        fraction_above = winConditionParams[0]
+        
+        
+        tot_time_above = 0.0
+        for i, val in enumerate(ydata):
+            if i == 0:
+                pass  # do nothing here
+            else:
+                currtime = times[i]
+                prevtime = times[i-1]
+                
+                currvalue = ydata[i]
+                prevvalue = ydata[i-1]
+                
+                currthr = thrdata[i]
+                prevthr = thrdata[i-1]
+
+                # some artithmatics to figure out the intercept time:            
+                if prevvalue < prevthr and currvalue > prevthr:
+                    t_above = (1.0 - (prevthr - prevvalue) / (currvalue + prevthr - prevvalue - currthr)) * (currtime - prevtime)
+                elif prevvalue > prevthr and currvalue < prevthr:
+                    t_above = (prevthr - prevvalue) / (currvalue + prevthr - prevvalue - currthr) * (currtime - prevtime)
+                elif prevvalue > prevthr and currvalue > currthr:
+                    t_above = (currtime - prevtime)
+                elif prevvalue < prevthr and currvalue < currthr:
+                    t_above = 0.0
+                    
+                tot_time_above += t_above
+            
+        if tot_time_above / totTime > fraction_above:
+            outcome = True
+            outcomebool = 1
+
+
+
+
+
+
+
+
+
+        
+    return outcomebool
+
+
+
+
+
+def init_staircases_steps(G):
+    pass
+
+    # the same initialization stuff, but now with (more regular) staircases.
+
+
+
+
+
+def init_staircases_quest(G):
+    
+    # we won't optionalize this ... just go with it. 
+    NUMBEROFSETS = G['EX_NUMBEROFSETS']
+    MIX = G['EX_MIXOFSETS'] 
+    STAIRIDENTIFIER = G['EX_STAIRIDENTIFIER']
+    TUNINGTYPE = G['EX_TUNING_TYPE']
+    
+    
+    if TUNINGTYPE == 'thr':
+    
+        startVal = 0.75
+        startValSd = 0.25
+        pThreshold = 0.82
+        gamma = 0.5
+        minVal = 0.0
+        maxVal = 1.0
+
+
+    elif TUNINGTYPE == 'linear':
+        
+        startVal = 1
+        startValSd = 0.1
+        pThreshold = 0.82
+        gamma = 0.5
+        minVal = 0.5
+        maxVal = 1.5
+        
+    #nTrials = NUMBEROFSETS
+    
+    
+    # some logic to figure out whether there is a previous staircase
+    # see IF there is a number given: 1-1, or 0001. Then use the create
+    # fname magic to check whether there is a logfile like that in there.
+    # then if it's there -- load it (it's a .pkl).
+
+    
+    staircase_logfile_basename = 'log/staircases_quest_%s_%s.log' % (TUNINGTYPE, STAIRIDENTIFIER)
+    file_to_check = create_incremental_filename(staircase_logfile_basename)
+    
+    if os.path.isfile(file_to_check):
+        count = int(re.sub(r'(.*?)([0-9]*?)(\..+)',r'\2',file_to_check))
+        current_file = re.sub(r'(.*?)([0-9]*?)(\..+)',r'\1%d\3',file_to_check) % count-1
+    
+        if os.path.isfile(current_file):
+            
+            print('Found previous Staircase information! : %s\n' % current_file)
+            
+            with open(current_file,'rb') as f:
+                prev_staircases = f.read()
+                
+
+            list_up_till_now=dict()
+            for key in prev_staircases.keys():
+                list_up_till_now[key] = prev_staircases[key].otherData['list_up_till_now'][-1]  # pick the last one
+            if G['EX_XorV_RESET_POINTS'] is True:
+                list_up_till_now = {'train':[], 'transfer':[], 'observe':[], 'rest':[]}
+                
+                
+
+    else:
+        prev_staircases = {'train':None, 'transfer':None, 'observe':None, 'rest':None}   # any of the previous staircases                
+        list_up_till_now = {'train':[], 'transfer':[], 'observe':[], 'rest':[]} 
+
+
+    CP['list_up_till_now'] = list_up_till_now
+    
+    
+    
+    quest_staircase = dict()
+    
+    for qtype in ['train','transfer','observe','rest']:
+        
+        nTrials = NUMBEROFSETS * MIX[qtype]
+        
+        quest_staircase[qtype] = data.QuestHandler(
+                startVal,
+                startValSd,
+                pThreshold=pThreshold, 
+                gamma=gamma,
+                nTrials=nTrials, 
+                minVal=minVal, 
+                maxVal=maxVal, 
+                staircase=prev_staircases[qtype])
+    
+    
+    # we try to get all of the responses up till now.
+        quest_staircase[qtype].addOtherData('list_up_till_now',list_up_till_now[qtype])
+    G['staircases'] = quest_staircase  
+    #    while thisVal in staircase:
+            
+            # tune the curve with thisVal, if that's the thing
+            # or alternatively, change the thr
+            
+            # do NF run
+            
+            # determine win condition
+            # add it to Response
+    #        staircase.addResponse
+    
+    
+
+
+
+
+
 #%% Experimental Contruction, I
-
-
 def define_experiment(G, st, pr, CP):
     
     
@@ -632,8 +911,19 @@ def LineCalculations(G, st, CP):
     nf_line = st['nf_line'][0]        # this is a shapestim
     patches = st['patches']           # this is a list of shapestims
     
+    trialtype = CP['TrialType'][0]
+    this_staircase = G['staircases'][trialtype]    
+    # obtain next response from staircase
+    nextTuningVal = this_staircase.next()
+    # check if the tuning type is THR --> change THR
+    if CP['TUNING_TYPE'] == 'thr':
+        CP['thrContainer'][0] = nextTuningVal
+    
+    
+    # should work...
     thr=thrContainer[0]
-    ypos_for_color=nfvalueContainer[0]
+    # ypos_for_color=nfvalueContainer[0]
+    ypos_for_color=tuning(CP, nfvalueContainer[0])
     
     nf_line.setVertices((0, 0)) # this should reset it without this being re-initialized again/
     # self.st['nf_line'][0] = visual.ShapeStim(self.win, vertices=[(0, 0)], closeShape=False, lineColor='lightblue', size=self.scaling, lineWidth=0)
@@ -651,12 +941,12 @@ def LineCalculations(G, st, CP):
 
     # deal with the NF line:
     vertices=[]
-    vertices.append( (-1, nfvalueContainer[0]) )
+    vertices.append( (-1, ypos_for_color) )
     nf_line.setVertices(vertices)
 
 
     
-    if nfvalueContainer[0] > thrContainer[0]:
+    if ypos_for_color > thrContainer[0]:
         # make a new patch..
 
         rnew, gnew, bnew = my_color_calculator(hb, he, thr, colorgap, ypos_for_color, 1, -1)   
@@ -665,7 +955,7 @@ def LineCalculations(G, st, CP):
         patch_vert=[]
         ABOVE_PREV = True
         patch_vert.append((-1,  thrContainer[0]      ))
-        patch_vert.append((-1+0.0001,  nfvalueContainer[0]  ))
+        patch_vert.append((-1+0.0001,  ypos_for_color  ))
         patch_vert.append((-1+0.0001,  thrContainer[0]      ))
 
         newpatch = visual.ShapeStim(win, vertices=patch_vert, fillColor=patch_color, size=scaling, lineWidth=0)
@@ -674,7 +964,9 @@ def LineCalculations(G, st, CP):
         ABOVE_PREV = False
     
     
-    
+    tlist=[]  # needed to calculate the win condition
+    ylist=[]  # this too -- needed to calculate the win condition
+    thrlist=[]  # yes, this too. To be ultra-flexible.
     curtime=0
     curi=0
     cl=clock.Clock()  # yeah...well, we make a second clock. should not be too off in seconds.
@@ -690,9 +982,12 @@ def LineCalculations(G, st, CP):
         thr=thrContainer[0]  # might've changed in the meantime?
         
         xpos = -1 + 2 * curtime / tmax
-        ypos = nfvalueContainer[0]
+        #ypos = nfvalueContainer[0]
+        ypos = tuning(CP, nfvalueContainer[0])
 
-        
+        tlist.append(curtime)
+        ylist.append(ypos)
+        thrlist.append(thr)
         
         
         vertices.append((xpos, ypos))
@@ -780,7 +1075,19 @@ def LineCalculations(G, st, CP):
         
         yield From(asyncio.sleep(G['EX_PR_SLEEPTIME']))
 
-        
+
+    is_won = check_win_condition(CP, tlist, ylist, thrlist)
+    this_staircase.addResponse(is_won)
+    this_staircase.otherData['list_up_till_now'][-1].append(is_won)
+    
+    tot_points = calculate_total_points(G)
+    
+    if is_won == 1:
+        CP['corr_incorr'] = 'st_correct'
+    else:
+        CP['corr_incorr'] = 'st_incorrect'
+
+    
     if G['EX_INTERACTIONMODE'] == 'master':
         pass  # call staircase calculator now, that will make things ready for the next (feedback) step.
 
@@ -824,6 +1131,16 @@ def ThermoCalculations(G, st, CP):
 
 
     hb, he = G['EX_THERMOCLIMS']
+
+
+    trialtype = CP['TrialType'][0]
+    print('---->' + trialtype)
+    this_staircase = G['staircases'][trialtype]    
+    # obtain next response from staircase
+    nextTuningVal = this_staircase.next()
+    # check if the tuning type is THR --> change THR
+    if CP['TUNING_TYPE'] == 'thr':
+        CP['thrContainer'][0] = nextTuningVal
     
     
 
@@ -855,6 +1172,12 @@ def ThermoCalculations(G, st, CP):
 
     curtime=0
     
+    
+    tlist=[]  # needed to calculate the win condition
+    ylist=[]  # this too -- needed to calculate the win condition
+    thrlist=[]
+    
+    
     cl=clock.Clock()  # yeah...well, we make a second clock. should not be too off in seconds.
     while curtime < tmax:
         
@@ -863,7 +1186,11 @@ def ThermoCalculations(G, st, CP):
         curtime=cl.getTime()
         
         # so, what is the y pos?
-        ypos = nfsignalContainer[0]
+        ypos = tuning(CP, nfsignalContainer[0])
+        
+        tlist.append(curtime)
+        ylist.append(ypos)
+        thrlist.append(thrContainer[0])
 
         rnew, gnew, bnew = my_color_calculator(hb, he, thrContainer[0], colorgap, ypos, 1, -1)                
 
@@ -885,6 +1212,20 @@ def ThermoCalculations(G, st, CP):
         
         
 
+
+    is_won = check_win_condition(CP, tlist, ylist, thrlist)
+    this_staircase.addResponse(is_won)
+    this_staircase.otherData['list_up_till_now'][-1].append(is_won)
+    
+    tot_points = calculate_total_points(G)
+    
+    if is_won == 1:
+        CP['corr_incorr'] = 'st_correct'
+    else:
+        CP['corr_incorr'] = 'st_incorrect'
+        
+        
+    
     if G['EX_INTERACTIONMODE'] == 'master':
         pass  # call staircase calculator now, that will make things ready for the next (feedback) step.
 
@@ -926,10 +1267,28 @@ def SquareCalculations(G, st, CP):
     st = st  # this contains points to all the stimuli.
     colorgap = G['EX_COLORGAP']
     hb, he = G['EX_THERMOCLIMS']
+    
+    trialtype = CP['TrialType'][0]
+    this_staircase = G['staircases'][trialtype]
+
+
+
+
+    # obtain next response from staircase
+    nextTuningVal = this_staircase.next()
+    # check if the tuning type is THR --> change THR
+    if CP['TUNING_TYPE'] == 'thr':
+        CP['thrContainer'][0] = nextTuningVal
+    
+
 
 
     curtime=0
     square_to_be_colorized = st['square']
+    
+    tlist=[]  # needed to calculate the win condition
+    ylist=[]  # this too -- needed to calculate the win condition
+    thrlist=[]
     
     cl=clock.Clock()  # yeah...well, we make a second clock. should not be too off in seconds.
     while curtime < tmax:
@@ -938,10 +1297,14 @@ def SquareCalculations(G, st, CP):
         
         curtime=cl.getTime()
 
-        
+
         # so, what is the y pos?
-        ypos = nfsignalContainer[0]  #this changes due to the other thread...
-        
+        ypos = tuning(CP, nfsignalContainer[0])  #this changes due to the other thread...
+
+
+        tlist.append(curtime)
+        ylist.append(ypos)        
+        thrlist.append(thrContainer[0])
 
         rnew, gnew, bnew = my_color_calculator(hb, he, thrContainer[0], colorgap, ypos, 1, -1)                
         square_to_be_colorized.setFillColor((rnew, gnew, bnew), colorSpace='rgb')
@@ -952,10 +1315,32 @@ def SquareCalculations(G, st, CP):
         # then, what is the color?
 
         # square_to_be_colorized.fillColor = (rnew, gnew, bnew)
+        
+
+
+
+    is_won = check_win_condition(CP, tlist, ylist, thrlist)
+    this_staircase.addResponse(is_won)
+    
+    tot_points = calculate_total_points(G)  # the staircases are also in G...
+    
+    this_staircase.otherData['list_up_till_now'][-1].append(is_won)
+    
+    # add some logic to figure out what the total score is!
+    # this_staircase.otherData['list_up_till_now'][-1]
+    
+    if is_won == 1:
+        CP['corr_incorr'] = 'st_correct'
+    else:
+        CP['corr_incorr'] = 'st_incorrect'
+    
+    #    list_up_till_now.append(is_won)
+    #    this_staircase.addOtherData(list_up_till_now)
+    # prep the next corr/incorr stimulus:
+    
 
     if G['EX_INTERACTIONMODE'] == 'master':
         pass  # call staircase calculator now, that will make things ready for the next (feedback) step.
-
 
 
 
@@ -1109,7 +1494,7 @@ def runTrial(trialType, G, st, CP, ex, loop):
         # so, what IS the message?
         # general
         
-        
+        CP['TrialType'][0] = trialType
         CP['CURRENTPART'][0] = part
         programs, tdur, stims, messages_start, messages_stop = ex[trialType][part]
         
@@ -1269,9 +1654,11 @@ if __name__ == "__main__":
     G['EX_GRAPHICSMODE'] = 'thermo'
 
     init_window(G)
+    init_staircases_quest(G)
     st=make_stimuli(G, CP)
     pr=init_programs(G, st, CP)
     ex=define_experiment(G, st, pr, CP)  # pr is passed to define_experiment, but then we won't need...
+    
     
     
     run_main_program(G, st, CP, ex, pr)
