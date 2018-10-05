@@ -1396,6 +1396,8 @@ def handle_visual_contents(G):
     
     times = [i[0] for i in visual_stim_list]
     times.sort()
+    times.append(340. + 1000.)  # some insanely high number that'll never be reached!
+                                # a thousand deaths for this dirty hack. 
     nextTime=times.pop(0)
     
     VIS_checkerSpeedMultiplier=G['v']['VIS_checkerSpeedMultiplier']
@@ -1439,7 +1441,9 @@ def handle_visual_contents(G):
             if currentTime > nextTime:
             
                 b, e, side, freq = visdict[nextTime]
+
                 nextTime=times.pop(0)
+                    
                 if b < currentTime < e:
                     
                     #print('--------------------------> Commencing Playing Visual')
