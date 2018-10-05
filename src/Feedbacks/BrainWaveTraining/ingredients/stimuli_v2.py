@@ -76,7 +76,7 @@ G['EX_TESTSIGNALTYPE'] = 'sin'  # or random
 G['EX_TESTSIGNALPERIOD'] = 4  # seconds
 G['EX_TESTSIGNALUPDATEINTERVAL'] = 0.05   # make sure it's not the same.
 
-G['EX_GRAPHICSMODE'] = 'thermo'  # what kind of stimulus?
+G['EX_GRAPHICSMODE'] = 'line'  # what kind of stimulus?
 G['EX_INTERACTIONMODE'] = 'master'  # now it will calculate succes and failure itself based on passed-on parameters in G
                                  # also, it will listen to what kind of trial needs to be run depending on what's passed on.
                                  # slave will be that it's dependent on the signals coming in from the Master Computer.
@@ -151,7 +151,7 @@ CP['thrContainer'] = [0.5]
 CP['TJITT'] = [1]
 CP['CURRENTPART'] = [None]
 CP['instruction'] = 'arrowup'  # choose between 'arrowup' and 'donotreg'
-CP['corr_incorr'] = 'st_incorrect'  # chooose between 'st_correct' and 'st_incorrect'
+CP['corr_incorr'] = [None]  # chooose between 'st_correct' and 'st_incorrect'
 CP['TUNING_TYPE'] = G['EX_TUNING_TYPE']  # copy/paste into CP, to be (changed) later during the experiment...
 CP['TUNING_PARAMS'] = G['EX_TUNING_PARAMS']  # same here -- but, it is a list.
 CP['TrialType'] = [None]
@@ -334,7 +334,7 @@ def make_stimuli(G, CP):
 
     # set these for now, since we use these later on. Use control parameters to choose which one.
     st['instruction'] =  st[CP['instruction']]
-    st['corr_incorr'] =  st[CP['corr_incorr']]
+    #st['corr_incorr'] =  st[CP['corr_incorr']]
 
 
     #
@@ -493,6 +493,8 @@ def check_win_condition(CP, times, ydata, thrdata):
     # so we are NOT going to change the thr during the experiment.. or are we?
     # in case we do: we need another list of thr values, too.
     
+    
+    
     outcome = False
     outcomebool = 0
     
@@ -527,14 +529,20 @@ def check_win_condition(CP, times, ydata, thrdata):
                     t_above = 0.0
                     
                 tot_time_above += t_above
-            
+
+
+        print('WIN CONDITION: tot_time_above = %f, tot_time = %f' % (tot_time_above, totTime))            
+        print('WIN CONDITION: Fraction above = %f, Fraction needed = %f' % (tot_time_above / totTime, fraction_above))
         if tot_time_above / totTime > fraction_above:
             outcome = True
             outcomebool = 1
+            # print('WIN CONDITION %s --> succeeded' % CP['WIN_CONDITION'])
 
 
 
 
+
+    print('WIN CONDITION: %s --> %s' % (CP['WIN_CONDITION'], {0:'Failed', 1:'Succeeded'}[outcomebool]))
 
 
 
@@ -567,7 +575,7 @@ def init_staircases_quest(G):
     
     if TUNINGTYPE == 'thr':
     
-        startVal = 0.75
+        startVal = 0.7
         startValSd = 0.25
         pThreshold = 0.82
         gamma = 0.5
@@ -690,16 +698,16 @@ def define_experiment(G, st, pr, CP):
     ex['line']['train']['feedback']             = ([pr['LineCalculations']],            TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    ['bFB','btrain'], ['eFB','etrain'])
     ex['line']['train']['veryshortpause1']      = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    [], [])
     ex['line']['train']['veryshortpause2']      = ([],                                  TVSP,        [st['background']],                                                            [], [])
-    ex['line']['train']['mark']                 = ([],                                  TMARK,       [st['background'], st['corr_incorr']],                                         ['XorV','xorvtrain'], [])
+    ex['line']['train']['mark']                 = ([],                                  TMARK,       [st['background'], CP['corr_incorr']],                                         ['XorV','xorvtrain'], [])
     ex['line']['train']['jitterpause']          = ([],                                  CP['TJITT'], [st['background']],                                                            ['bISI','bisitrain'], ['eISI','eisitrain'])
     
     
     ex['line']['transfer']['sequence']          = ['instruction', 'pause', 'feedback', 'veryshortpause', 'mark', 'jitterpause' ]
     ex['line']['transfer']['instruction']       = ([],                                  TINSTR,      [st['background'], st['st_txt_upregulate']],                                   ['instruction','itransfer'], [])
     ex['line']['transfer']['pause']             = ([pr['pickRandomJitter']],            TPAUSE,      [st['background']],                                                            [], [])
-    ex['line']['transfer']['feedback']          = ([pr['LineCheck']],                   TFB,         [st['background'], st['thrline']],                                             ['bFB','btransfer'], ['eFB','etransfer'])
+    ex['line']['transfer']['feedback']          = ([pr['LineCalculations']],            TFB,         [st['background'], st['thrline']],                                             ['bFB','btransfer'], ['eFB','etransfer'])
     ex['line']['transfer']['veryshortpause']    = ([],                                  TVSP,        [st['background']],                                                            [], [])
-    ex['line']['transfer']['mark']              = ([],                                  TMARK,       [st['background'], st['corr_incorr']],                                         ['XorV''xorvtransfer'], [])
+    ex['line']['transfer']['mark']              = ([],                                  TMARK,       [st['background'], CP['corr_incorr']],                                         ['XorV''xorvtransfer'], [])
     ex['line']['transfer']['jitterpause']       = ([],                                  CP['TJITT'], [st['background']],                                                            ['bISI','bisitransfer'], ['eISI','eisitransfer'])
     
     
@@ -714,7 +722,7 @@ def define_experiment(G, st, pr, CP):
     ex['line']['rest']['sequence']              = ['instruction', 'pause', 'feedback', 'jitterpause' ]
     ex['line']['rest']['instruction']           = ([],                                  TINSTR,      [st['background'], st['st_txt_noregulate']],                                   ['instruction','irest'], [])
     ex['line']['rest']['pause']                 = ([pr['pickRandomJitter']],            TPAUSE,      [st['background']],                                                            [], [])
-    ex['line']['rest']['feedback']              = ([pr['LineCheck']],                   TFB,         [st['background'], st['thrline']],                                             ['bFB', 'brest'], ['eFB', 'erest'])
+    ex['line']['rest']['feedback']              = ([pr['LineCalculations']],            TFB,         [st['background'], st['thrline']],                                             ['bFB', 'brest'], ['eFB', 'erest'])
     ex['line']['rest']['jitterpause']           = ([],                                  CP['TJITT'], [st['background']],                                                            ['bISI','bisirest'],['eISI','eisirest'])
 
 
@@ -733,8 +741,8 @@ def define_experiment(G, st, pr, CP):
     ex['thermo']['observe']['feedback']         = ([pr['ThermoCalculations']],          TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer']],                 ['bFB','bobserve'], ['eFB','eobserve'])
     ex['thermo']['observe']['veryshortpause']   = ([],                                  TVSP,   [st['background'], st['thermo_lines'], st['thermo_thermometer']],                 [], [])
 
-    ex['thermo']['transfer']['feedback']        = ([pr['ThermoCheck']],                 TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer_silent']],          ['bFB','btransfer'], ['eFB','etransfer'])
-    ex['thermo']['rest']['feedback']            = ([pr['ThermoCheck']],                 TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer_silent']],          ['bFB', 'brest'], ['eFB', 'erest'])
+    ex['thermo']['transfer']['feedback']        = ([pr['ThermoCalculations']],          TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer_silent']],          ['bFB','btransfer'], ['eFB','etransfer'])
+    ex['thermo']['rest']['feedback']            = ([pr['ThermoCalculations']],          TFB,    [st['background'], st['thermo_lines'], st['thermo_thermometer_silent']],          ['bFB', 'brest'], ['eFB', 'erest'])
 
 
 
@@ -751,8 +759,8 @@ def define_experiment(G, st, pr, CP):
     ex['square']['observe']['feedback']         = ([pr['SquareCalculations']],          TFB,    [st['background'], st['square'], st['square_focus']],                             ['bFB','bobserve'], ['eFB','eobserve'])
     ex['square']['observe']['veryshortpause']   = ([],                                  TVSP,   [st['background'], st['square'], st['square_focus']],                             [], [])
 
-    ex['square']['transfer']['feedback']        = ([],                                  TFB,    [st['background'], st['square_silent'], st['square_focus']],                      ['bFB','btransfer'], ['eFB','etransfer'])  # no need to further calibrate a grey square, like with line and thermo.
-    ex['square']['rest']['feedback']            = ([],                                  TFB,    [st['background'], st['square_silent'], st['square_focus']],                      ['bFB', 'brest'], ['eFB', 'erest'])  # no need to further calibrate a grey square, like with line and thermo.
+    ex['square']['transfer']['feedback']        = ([pr['SquareCalculations']],          TFB,    [st['background'], st['square_silent'], st['square_focus']],                      ['bFB','btransfer'], ['eFB','etransfer'])  # no need to further calibrate a grey square, like with line and thermo.
+    ex['square']['rest']['feedback']            = ([pr['SquareCalculations']],          TFB,    [st['background'], st['square_silent'], st['square_focus']],                      ['bFB', 'brest'], ['eFB', 'erest'])  # no need to further calibrate a grey square, like with line and thermo.
 
 
 
@@ -1077,16 +1085,17 @@ def LineCalculations(G, st, CP):
 
 
     is_won = check_win_condition(CP, tlist, ylist, thrlist)
-    this_staircase.addResponse(is_won)
+    this_staircase.addResponse(1-is_won)
     this_staircase.otherData['list_up_till_now'][-1].append(is_won)
     
     tot_points = calculate_total_points(G)
     
     if is_won == 1:
-        CP['corr_incorr'] = 'st_correct'
+        CP['corr_incorr'][0] = st['st_correct']
+        print('should draw the st_correct now!!!')
     else:
-        CP['corr_incorr'] = 'st_incorrect'
-
+        CP['corr_incorr'][0] = st['st_incorrect']
+    
     
     if G['EX_INTERACTIONMODE'] == 'master':
         pass  # call staircase calculator now, that will make things ready for the next (feedback) step.
@@ -1134,7 +1143,7 @@ def ThermoCalculations(G, st, CP):
 
 
     trialtype = CP['TrialType'][0]
-    print('---->' + trialtype)
+    
     this_staircase = G['staircases'][trialtype]    
     # obtain next response from staircase
     nextTuningVal = this_staircase.next()
@@ -1214,16 +1223,17 @@ def ThermoCalculations(G, st, CP):
 
 
     is_won = check_win_condition(CP, tlist, ylist, thrlist)
-    this_staircase.addResponse(is_won)
+    this_staircase.addResponse(1-is_won)
     this_staircase.otherData['list_up_till_now'][-1].append(is_won)
     
     tot_points = calculate_total_points(G)
     
     if is_won == 1:
-        CP['corr_incorr'] = 'st_correct'
+        CP['corr_incorr'][0] = st['st_correct']
+        print('should draw the st_correct now!!!')
     else:
-        CP['corr_incorr'] = 'st_incorrect'
-        
+        CP['corr_incorr'][0] = st['st_incorrect']
+    
         
     
     if G['EX_INTERACTIONMODE'] == 'master':
@@ -1320,7 +1330,7 @@ def SquareCalculations(G, st, CP):
 
 
     is_won = check_win_condition(CP, tlist, ylist, thrlist)
-    this_staircase.addResponse(is_won)
+    this_staircase.addResponse(1-is_won)
     
     tot_points = calculate_total_points(G)  # the staircases are also in G...
     
@@ -1330,9 +1340,11 @@ def SquareCalculations(G, st, CP):
     # this_staircase.otherData['list_up_till_now'][-1]
     
     if is_won == 1:
-        CP['corr_incorr'] = 'st_correct'
+        CP['corr_incorr'][0] = st['st_correct']
+        print('should draw the st_correct now!!!')
     else:
-        CP['corr_incorr'] = 'st_incorrect'
+        CP['corr_incorr'][0] = st['st_incorrect']
+    
     
     #    list_up_till_now.append(is_won)
     #    this_staircase.addOtherData(list_up_till_now)
@@ -1480,6 +1492,7 @@ def handle_exception(f, trialType, G, st, CP, ex, loop):
 @asyncio.coroutine
 def runTrial(trialType, G, st, CP, ex, loop):
 
+    print('---->' + trialType)
     # print(trialType)
     # print(CP['TJITT'][0])
     #win = G['win']
@@ -1495,6 +1508,7 @@ def runTrial(trialType, G, st, CP, ex, loop):
         # general
         
         CP['TrialType'][0] = trialType
+
         CP['CURRENTPART'][0] = part
         programs, tdur, stims, messages_start, messages_stop = ex[trialType][part]
         
@@ -1516,8 +1530,8 @@ def runTrial(trialType, G, st, CP, ex, loop):
         # print('debug: ' + part + 'start')    
         G['cl'].reset()
         while G['cl'].getTime() < tdur:
+            yield From(asyncio.sleep(0))
             for i, stim in enumerate(stims):
-                
                 if isinstance(stim, list):  # specifically for the patches..
                     #print(stim)
                     for p in stim:
@@ -1615,7 +1629,7 @@ def run_main_program(G, st, CP, ex, pr):
     # so to debug, just run tasks_dbg instead of tasks.
     for t_i in my_trial_sequence:
         trialType = my_trial_definitions[t_i]
-        print(trialType)
+        # print(trialType)
         # trialType, G, st, CP, ex, loop
         loop.run_until_complete(asyncio.wait([asyncio.async(handle_exception(runTrial,trialType, G, st, CP, ex, loop))]))   
     
@@ -1651,7 +1665,7 @@ if __name__ == "__main__":
     # G is global parameters...
     # CP is 'Control Parameters', i.e. for which-trial-next, etc.
 
-    G['EX_GRAPHICSMODE'] = 'thermo'
+    G['EX_GRAPHICSMODE'] = 'line'
 
     init_window(G)
     init_staircases_quest(G)
