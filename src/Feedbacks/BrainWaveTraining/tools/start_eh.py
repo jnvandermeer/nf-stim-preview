@@ -218,6 +218,7 @@ class eventHandler(multiprocessing.Process):
                 except:
                     
                     print('That code doesn\'''t exist: %s\n' % message)
+                    
                     break
                     
                 

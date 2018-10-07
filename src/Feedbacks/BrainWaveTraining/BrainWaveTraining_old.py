@@ -4,7 +4,6 @@
 # visual, sound, core, data, event and logging are the crucial ones.
 
 import random
-import pickle
 from psychopy import clock, event, data, logging
 
 from FeedbackBase.MostBasicPsychopyFeedback import MostBasicPsychopyFeedback
@@ -28,10 +27,6 @@ from Feedbacks.BrainWaveTraining.tools.start_eh import start_eh
 from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import make_stimuli
 from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import init_programs
 from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import define_experiment
-from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import init_staircases_quest
-from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import init_staircases_steps
-
-
 
 from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import runTrial
 from Feedbacks.BrainWaveTraining.ingredients.stimuli_v2 import flatten
@@ -79,14 +74,10 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         self.EX_TPAUSE = 0.5
         self.EX_NREGULATE = 30
         self.EX_NTRANSFER = 10
-        
-        self.EX_SHOWCHECKORCROSS = True
         self.EX_SHOWCHECKORCROSSTRANSFER = True
-        self.EX_SHOWPOINTS = True
-        
         self.EX_SQUARESIZE = 0.25
         self.EX_UPREGTEXT = 'regulate up'
-        self.EX_TESTSIGNALUPDATEINTERVAL = 0.01
+        self.EX_TESTSIGNALUPDATEINTERVAL = 0.05
         self.EX_NREST = 10
         self.EX_SCALING = [0.75, 0.75]          # scaling for X and Y
         self.EX_INTERACTIONMODE = 'master'      # the stimulus does already quite a lot
@@ -95,6 +86,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         self.EX_TINSTR = 2.0
         self.EX_THERMOCLIMS = ['c4572e', '4fc42e']
         self.EX_GRAPHICSMODE = 'line'
+        self.EX_SHOWCHECKORCROSS = True
         self.EX_STAIRCASEMANIPULATION = 'offset'
         self.EX_POINTS_PENALTY = -2
         self.EX_TESTSIGNALPERIOD = 4
@@ -109,20 +101,6 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         self.EX_BUTTONS = ['lctrl', 'rctrl']  # the button codes coming out of event.getStim()
         self.EX_INSTR = 'Upregulate: Focus on moving upwards / more green'    
         self.EX_RUNS = 5 # how many runs-of-6?
-        
-        
-        
-        # so these are NOW control parameters:
-        self.EX_TUNING_TYPE = 'thr'  # alternatives are 'linear', and maybe 'fancy'
-        self.EX_TUNING_PARAMS = [1.0, 0.0]  # linear requires a slope and offset. - eill not be used if it's not 'linear'
-        self.EX_WIN_CONDITION = 'time_above_thr'
-        self.EX_WIN_PARAMS = [0.25]  # 25 % of the time, it needs to be above the threshold...
-        self.EX_NUMBEROFSETS = 6  # how long (sets of 6) do we wish our experiment to have?? Determines also our staircases.
-        self.EX_MIXOFSETS = {'train':3, 'transfer':1, 'observe':1, 'rest':1}
-        self.EX_STAIRIDENTIFIER = '0001'  # needed to keep track of the staircases.
-        self.EX_XorV_RESET_POINTS = False  # at the start of the day --> this should be True.
-        
-        
         
         self.LOG_PATHFILE='log/bwt.log'  # for if you want to change this...
         self.LOG_PATHFILE_EVENT='log/evsbwt.log'  # for if you want to change this...
@@ -165,7 +143,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         self.EVENT_sendTcpIp=True
         self.EVENT_sendLogFile=True
         self.EVENT_printToTerminal=True
-        self.EVENT_printToTerminalAllowed=[0, 255]  # only allow the stops, which are < 40.
+        self.EVENT_printToTerminalAllowed=[0, 40]  # only allow the stops, which are < 40.
         
 
         
@@ -177,13 +155,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         CP['TJITT'] = [1]
         CP['CURRENTPART'] = [None]
         CP['instruction'] = 'arrowup'  # choose between 'arrowup' and 'donotreg'
-        CP['corr_incorr'] = [None]  # chooose between 'st_correct' and 'st_incorrect'
-        CP['TUNING_TYPE'] = self.EX_TUNING_TYPE # ']  # copy/paste into CP, to be (changed) later during the experiment...
-        CP['TUNING_PARAMS'] = self.EX_TUNING_PARAMS #']  # same here -- but, it is a list.
-        CP['TrialType'] = [None]
-        CP['WIN_CONDITION'] = self.EX_WIN_CONDITION
-        CP['WIN_PARAMS'] = self.EX_WIN_PARAMS 
-
+        CP['corr_incorr'] = 'st_incorrect'  # chooose between 'st_correct' and 'st_incorrect'
         
         self.CP = CP
         
@@ -233,11 +205,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         v['EX_TPAUSE']                      = self.EX_TPAUSE
         v['EX_NREGULATE']                   = self.EX_NREGULATE
         v['EX_NTRANSFER']                   = self.EX_NTRANSFER
-        
-        v['EX_SHOWCHECKORCROSS']            = self.EX_SHOWCHECKORCROSS
         v['EX_SHOWCHECKORCROSSTRANSFER']    = self.EX_SHOWCHECKORCROSSTRANSFER
-        v['EX_SHOWPOINTS']                  = self.EX_SHOWPOINTS
-
         v['EX_SQUARESIZE']                  = self.EX_SQUARESIZE
         v['EX_UPREGTEXT']                   = self.EX_UPREGTEXT
         v['EX_TESTSIGNALUPDATEINTERVAL']    = self.EX_TESTSIGNALUPDATEINTERVAL
@@ -249,7 +217,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         v['EX_TINSTR']                      = self.EX_TINSTR
         v['EX_THERMOCLIMS']                 = self.EX_THERMOCLIMS
         v['EX_GRAPHICSMODE']                = self.EX_GRAPHICSMODE
-
+        v['EX_SHOWCHECKORCROSS']            = self.EX_SHOWCHECKORCROSS
         v['EX_STAIRCASEMANIPULATION']       = self.EX_STAIRCASEMANIPULATION
         v['EX_POINTS_PENALTY']              = self.EX_POINTS_PENALTY
         v['EX_TESTSIGNALPERIOD']            = self.EX_TESTSIGNALPERIOD
@@ -264,7 +232,6 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         v['EX_BUTTONS']                     = self.EX_BUTTONS
         v['EX_INSTR']                       = self.EX_INSTR
         v['EX_RUNS']                        = self.EX_RUNS
-
 
 
         v['MONITOR_PIXWIDTH']               = self.MONITOR_PIXWIDTH
@@ -299,17 +266,6 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         v['EVENT_sendLogFile']              = self.EVENT_sendLogFile
         v['EVENT_printToTerminal']          = self.EVENT_printToTerminal
         v['EVENT_printToTerminalAllowed']   = self.EVENT_printToTerminalAllowed
-        
-        
-                # so these are NOW control parameters:
-        v['EX_TUNING_TYPE']                 = self.EX_TUNING_TYPE # = 'thr'  # alternatives are 'linear', and maybe 'fancy'
-        v['EX_TUNING_PARAMS']               = self.EX_TUNING_PARAMS # = [1.0, 0.0]  # linear requires a slope and offset. - eill not be used if it's not 'linear'
-        v['EX_WIN_CONDITION']               = self.EX_WIN_CONDITION # = 'time_above_thr'
-        v['EX_WIN_PARAMS']                  = self.EX_WIN_PARAMS # = [0.25]  # 25 % of the time, it needs to be above the threshold...
-        v['EX_NUMBEROFSETS']                = self.EX_NUMBEROFSETS # = 6  # how long (sets of 6) do we wish our experiment to have?? Determines also our staircases.
-        v['EX_MIXOFSETS']                   = self.EX_MIXOFSETS # = {'train':3, 'transfer':1, 'observe':1, 'rest':1}
-        v['EX_STAIRIDENTIFIER']             = self.EX_STAIRIDENTIFIER # = '0001'  # needed to keep track of the staircases.
-        v['EX_XorV_RESET_POINTS']           = self.EX_XorV_RESET_POINTS # = False  # at the start of the day --> this should be True.
 
 
 
@@ -353,7 +309,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         G=init_eventcodes(G)  # and this??
         G=start_eh(G)
 
-        init_staircases_quest(G)
+        
         st=make_stimuli(G, CP)
         pr=init_programs(G, st, CP)
 
@@ -425,15 +381,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         self.G['logging'].flush()
         self.G['win'].close()
 
-
-        # save the staircases:
-        staircases = self.G['staircases']
-        staircase_file_name_to_save = self.G['file_to_check']
         
-        print('saving staircases in: %s' % staircase_file_name_to_save)
-        with open(staircase_file_name_to_save,'wb') as f:
-            pickle.dump(staircases, f)
-        print('saving done');
 
     # this always gets called, even paused.. -- UNTIL self.on_stop() is called. this will exit the main loop.
     # a 'tick' == ONE passage through the main loop (which is a 'while True' loop, basically...)
@@ -450,8 +398,6 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         # from efl.efl_v6 import *
         # put everything here, which is in from __name__ == "__main__"
         # so this is one 'tick', but that's OK - one tick is all we need from pyff.
-        # print(st['st_correct'].pos)
-        # print(st['st_incorrect'].pos)
 
         try:
             

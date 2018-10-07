@@ -55,6 +55,20 @@ def init_eventcodes(G):
             'recv_corr_incorr':103,
             
             
+            
+            'b_nf_below':151,
+            'e_nf_below':159,
+            
+            'b_nf_above':161,
+            'e_nf_above':169,
+            
+            'nf_goingup':160,
+            'nf_goingdown':150,
+            
+            
+            
+            
+            
     }        
             
             

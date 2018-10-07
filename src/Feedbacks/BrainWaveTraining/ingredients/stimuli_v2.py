@@ -30,6 +30,7 @@ import threading
 import time
 import copy
 import re
+import pickle
 
 
 # let's try using async to keep all things into the Main Thread.
@@ -74,7 +75,7 @@ G['EX_TJITT']   = [0.8, 1.3]
 G['EX_TESTNFNOISE'] = True  # for checkign whether everything works...
 G['EX_TESTSIGNALTYPE'] = 'sin'  # or random
 G['EX_TESTSIGNALPERIOD'] = 4  # seconds
-G['EX_TESTSIGNALUPDATEINTERVAL'] = 0.05   # make sure it's not the same.
+G['EX_TESTSIGNALUPDATEINTERVAL'] = 0.01   # make sure it's not the same.
 
 G['EX_GRAPHICSMODE'] = 'line'  # what kind of stimulus?
 G['EX_INTERACTIONMODE'] = 'master'  # now it will calculate succes and failure itself based on passed-on parameters in G
@@ -99,6 +100,7 @@ G['EX_PATCHCOLOR']='green'
 
 G['EX_SHOWCHECKORCROSS'] = True
 G['EX_SHOWCHECKORCROSSTRANSFER'] = True
+G['EX_SHOWPOINTS'] = True
 
 G['EX_SQUARESIZE'] = 0.25 # in case we have the square NF...
 
@@ -113,7 +115,7 @@ G['EX_PR_SLEEPTIME'] = 0.01 # 0.01  # how long do we 'sleep' in our main program
 
 # so these are NOW control parameters:
 G['EX_TUNING_TYPE'] = 'thr'  # alternatives are 'linear', and maybe 'fancy'
-G['EX_TUNING_PARAMS'] = [0.5, 0.0]  # linear requires a slope and offset. - eill not be used if it's not 'linear'
+G['EX_TUNING_PARAMS'] = [1.0, 0.0]  # linear requires a slope and offset. - eill not be used if it's not 'linear'
 G['EX_WIN_CONDITION'] = 'time_above_thr'
 G['EX_WIN_PARAMS'] = [0.25]  # 25 % of the time, it needs to be above the threshold...
 
@@ -293,11 +295,20 @@ def make_stimuli(G, CP):
     # the vertices for 'correct':
     vert_correct=np.loadtxt(os.path.join(currpath, 'stim/vert_correct.txt'))
     st_correct_color='#5fd35f'
-    st_correct = visual.ShapeStim(win, vertices=vert_correct, closeShape=True, size=stimSize, fillColor=st_correct_color, lineWidth =0, autoLog=False)
+    st_correct = visual.ShapeStim(win, vertices=vert_correct, closeShape=True, size=stimSize, fillColor=st_correct_color, lineWidth =0, autoLog=False, pos=(0, 0))
     
     vert_incorrect=np.loadtxt(os.path.join(currpath,'stim/vert_incorrect.txt'))
-    st_incorrect_color='#e01000';
-    st_incorrect = visual.ShapeStim(win, vertices=vert_incorrect, closeShape=True, size=stimSize, fillColor=st_incorrect_color, lineWidth =0, autoLog=False)
+    st_incorrect_color='#DD1010';
+    st_incorrect = visual.ShapeStim(win, vertices=vert_incorrect, closeShape=True, size=stimSize, fillColor=st_incorrect_color, lineWidth =0, autoLog=False, pos=(0, 0))
+    
+
+    if G['EX_SHOWPOINTS'] is True:
+        print('--->---> ST --> REPOSITIONING')
+        
+        st_correct.pos = [0., -0.15]
+        st_incorrect.pos = [0., -0.15]
+        
+    
     
     st_txt_upregulate = visual.TextStim(win, text=G['EX_UPREGTEXT'],units='norm')
     st_txt_noregulate = visual.TextStim(win, text=G['EX_NOREGTEXT'],units='norm')  # we won't be scaling these
@@ -313,8 +324,9 @@ def make_stimuli(G, CP):
     # apply OUR scaling:
     for i in items:
         oldsize=i.size
+        oldpos = i.pos
         i.setSize((oldsize[0]*SCALING[0], oldsize[1]*SCALING[1]))
-
+        i.setPos((oldpos[0] *   SCALING[0],    oldpos[1] *      SCALING[1]    ))   
 
 
     # all stimuli (see above)
@@ -357,8 +369,9 @@ def make_stimuli(G, CP):
     # scale it:
     for i in items:
         oldsize=i.size
+        oldpos = i.pos
         i.setSize((oldsize[0]*SCALING[0], oldsize[1]*SCALING[1]))   # this will already scale the lines!! So even if you (re-set) the start and stop, things are fine.
-                                                                    # this is, indeed, supremely confusing!!! .. but naja.
+        i.setPos((oldpos[0] *   SCALING[0],    oldpos[1] *      SCALING[1]    ))                                                      # this is, indeed, supremely confusing!!! .. but naja.
 
     
     st['thermo_lines'] = thermo_lines
@@ -382,12 +395,19 @@ def make_stimuli(G, CP):
         
     
     
+
+
+    
+    
+    
     # scale them, too...
     items=[square, square_silent,square_focus] #, thermo_thermometer_silent]
     # scale it:
     for i in items:
         oldsize=i.size
+        oldpos = i.pos
         i.setSize((oldsize[0]*SCALING[0], oldsize[1]*SCALING[1])) 
+        i.setPos((oldpos[0] *   SCALING[0],    oldpos[1] *      SCALING[1]    ))   
     
 
     # assign them...
@@ -395,6 +415,21 @@ def make_stimuli(G, CP):
     st['square_silent']=square_silent
     st['square_focus']=square_focus
     
+    
+    #    st['point_summary']=[None]
+    #    st['point_summary'][0] = visual.TextStim(
+    #                            window=win,
+    #                            text="This textbox looks most like a textstim.",
+    #                            size=10,
+    #                            font_color=[-1,-1,1],
+    #                            size=(1.8,.1),
+    #                            pos=(0.0,-0.5),
+    #                            units='norm'
+    #     
+    st['point_summary'] = [None]
+    st['point_summary'] = visual.TextStim(win, text='Total Points: 0',units='norm', pos=(0., 0.25))
+    
+
     
     
     
@@ -408,7 +443,11 @@ def make_stimuli(G, CP):
 
 
 
-def calculate_total_points(G):
+def calculate_total_points(G, st, CP):
+    """ calculate the total # of points.
+    In addition, change the text of the 'total points' text stimulus in the 
+    list of st - so drawing it becomes easier.
+    """
     
     # think of a way to calculate the total # of points.
     # perhaps, we add in the transfer list, too.
@@ -417,18 +456,59 @@ def calculate_total_points(G):
     
     EX_POINTS_REWARD = G['EX_POINTS_REWARD']  #= 10
     EX_POINTS_PENALTY = G['EX_POINTS_PENALTY']  #= -2
-    pass
+    SHOWCHECKORCROSSTRANSFER = G['EX_SHOWCHECKORCROSSTRANSFER']
 
 
-    # use this to figure out total points...:
-    if G['EX_SHOWCHECKORCROSSTRANSFER']:
-        pass
 
     responses_train = G['staircases']['train'].otherData['list_up_till_now'][-1]
     responses_transfer = G['staircases']['transfer'].otherData['list_up_till_now'][-1]
+    responses_observe = G['staircases']['observe'].otherData['list_up_till_now'][-1]
+    responses_rest = G['staircases']['rest'].otherData['list_up_till_now'][-1]
 
+    print(responses_train)
+    print(responses_transfer)
+    print(responses_observe)
+    print(responses_rest)
+    
+    
+    totpoints = 0
+    for r in responses_train:
+        if r == 1:
+            totpoints += EX_POINTS_REWARD
+        elif r==0:
+            totpoints += EX_POINTS_PENALTY
 
-    return 0
+    if SHOWCHECKORCROSSTRANSFER:
+        for r in responses_transfer:
+            if r == 1:
+                totpoints += EX_POINTS_REWARD
+            elif r==0:
+                totpoints += EX_POINTS_PENALTY
+    
+    
+    # what was the last trial?
+    trialType = CP['TrialType'][0]
+    # print(G['staircases'][trialType].otherData['list_up_till_now'][-1])
+    lastResponse = G['staircases'][trialType].otherData['list_up_till_now'][-1][-1]
+    if lastResponse == 0:
+        lastpoints = EX_POINTS_PENALTY
+    elif lastResponse == 1:
+        lastpoints = EX_POINTS_REWARD
+    
+    if lastpoints < 0:
+        str_lastpoints = '%d ' % lastpoints
+    else:
+        str_lastpoints = '+ %d ' % lastpoints
+    
+    if totpoints < 0:
+        str_totpoints = '%d' % totpoints
+    else:
+        str_totpoints = '+%d' % totpoints
+    
+    
+    st['point_summary'].setText('%s points; total: %s' % (str_lastpoints, str_totpoints))
+    
+    return totpoints
 
 
 
@@ -459,7 +539,6 @@ def tuning(CP, y):
 
 
     #if tuningType == 'threshold':
-
 
     
     return yn
@@ -575,9 +654,9 @@ def init_staircases_quest(G):
     
     if TUNINGTYPE == 'thr':
     
-        startVal = 0.7
-        startValSd = 0.25
-        pThreshold = 0.82
+        startVal = 0.75
+        startValSd = 0.15
+        pThreshold = 0.75
         gamma = 0.5
         minVal = 0.0
         maxVal = 1.0
@@ -601,30 +680,43 @@ def init_staircases_quest(G):
     # then if it's there -- load it (it's a .pkl).
 
     
-    staircase_logfile_basename = 'log/staircases_quest_%s_%s.log' % (TUNINGTYPE, STAIRIDENTIFIER)
-    file_to_check = create_incremental_filename(staircase_logfile_basename)
-    
-    if os.path.isfile(file_to_check):
-        count = int(re.sub(r'(.*?)([0-9]*?)(\..+)',r'\2',file_to_check))
-        current_file = re.sub(r'(.*?)([0-9]*?)(\..+)',r'\1%d\3',file_to_check) % count-1
-    
-        if os.path.isfile(current_file):
-            
-            print('Found previous Staircase information! : %s\n' % current_file)
-            
-            with open(current_file,'rb') as f:
-                prev_staircases = f.read()
-                
+    staircase_logfile_basename = '../log/staircases_quest_%s_%s_m.pkl' % (TUNINGTYPE, STAIRIDENTIFIER)
 
-            list_up_till_now=dict()
-            for key in prev_staircases.keys():
-                list_up_till_now[key] = prev_staircases[key].otherData['list_up_till_now'][-1]  # pick the last one
-            if G['EX_XorV_RESET_POINTS'] is True:
-                list_up_till_now = {'train':[], 'transfer':[], 'observe':[], 'rest':[]}
+
+    file_to_check = create_incremental_filename(staircase_logfile_basename)
+    count = int(re.sub(r'(.*?_m)([0-9]*?)(\..+)',r'\2',file_to_check))
+    if count > 1:
+        current_file = re.sub(r'(.*?_m)([0-9]*?)(\..+)',r'\1%d\3',file_to_check) % (count-1)
+    else:
+       current_file = None
+
+ 
+    G['file_to_check'] = file_to_check
+    
+    if current_file:
+        G['current_staircase_file'] = current_file     
+
+        print('Found previous Staircase information! : %s\n' % current_file)
+        
+        with open(current_file,'rb') as f:
+            prev_staircases = pickle.load(f)
+            
+
+        list_up_till_now=dict()
+        for key in prev_staircases.keys():
+            #for item in prev_staircases[key].otherData['list_up_till_now'][-1]:
+            list_up_till_now = {'train':[], 'transfer':[], 'observe':[], 'rest':[]}
+            for item in prev_staircases[key].otherData['list_up_till_now'][-1]:   
+                list_up_till_now[key].append(item) # pick the last one
                 
-                
+                    
+        if G['EX_XorV_RESET_POINTS'] is True:
+            list_up_till_now = {'train':[], 'transfer':[], 'observe':[], 'rest':[]}
+            
+            
 
     else:
+        print('NO previous Staircase information!')
         prev_staircases = {'train':None, 'transfer':None, 'observe':None, 'rest':None}   # any of the previous staircases                
         list_up_till_now = {'train':[], 'transfer':[], 'observe':[], 'rest':[]} 
 
@@ -707,7 +799,7 @@ def define_experiment(G, st, pr, CP):
     ex['line']['transfer']['pause']             = ([pr['pickRandomJitter']],            TPAUSE,      [st['background']],                                                            [], [])
     ex['line']['transfer']['feedback']          = ([pr['LineCalculations']],            TFB,         [st['background'], st['thrline']],                                             ['bFB','btransfer'], ['eFB','etransfer'])
     ex['line']['transfer']['veryshortpause']    = ([],                                  TVSP,        [st['background']],                                                            [], [])
-    ex['line']['transfer']['mark']              = ([],                                  TMARK,       [st['background'], CP['corr_incorr']],                                         ['XorV''xorvtransfer'], [])
+    ex['line']['transfer']['mark']              = ([],                                  TMARK,       [st['background'], CP['corr_incorr']],                                         ['XorV', 'xorvtransfer'], [])
     ex['line']['transfer']['jitterpause']       = ([],                                  CP['TJITT'], [st['background']],                                                            ['bISI','bisitransfer'], ['eISI','eisitransfer'])
     
     
@@ -772,6 +864,12 @@ def define_experiment(G, st, pr, CP):
         elif G['EX_SHOWCHECKORCROSSTRANSFER'] is False:
             ex[key]['transfer']['sequence']           = ['instruction', 'pause', 'feedback', 'jitterpause' ]
             
+
+
+    if G['EX_SHOWPOINTS'] is True:
+        for key in ex.keys():
+             ex[key]['train']['mark'][2].append(st['point_summary'])
+             ex[key]['transfer']['mark'][2].append(st['point_summary'])
 
 
     
@@ -916,6 +1014,12 @@ def LineCalculations(G, st, CP):
     thrline = st['thrline']  # set positions...            
     # reset the NFLINE and PATCHES
     
+    # corr_st = st['st_correct']
+    # incorr_st = st['st_incorrect']
+    
+    
+    
+    
     nf_line = st['nf_line'][0]        # this is a shapestim
     patches = st['patches']           # this is a list of shapestims
     
@@ -953,10 +1057,11 @@ def LineCalculations(G, st, CP):
     nf_line.setVertices(vertices)
 
 
+
     
     if ypos_for_color > thrContainer[0]:
         # make a new patch..
-
+        G['eh'].send_message('b_nf_above')
         rnew, gnew, bnew = my_color_calculator(hb, he, thr, colorgap, ypos_for_color, 1, -1)   
         patch_color = (rnew, gnew, bnew)    
         
@@ -969,6 +1074,7 @@ def LineCalculations(G, st, CP):
         newpatch = visual.ShapeStim(win, vertices=patch_vert, fillColor=patch_color, size=scaling, lineWidth=0)
         patches.append(newpatch)
     else:
+        G['eh'].send_message('b_nf_below')
         ABOVE_PREV = False
     
     
@@ -1010,6 +1116,9 @@ def LineCalculations(G, st, CP):
         
         # if patchi>0:
         # now comes fun part -- i.e. the patches.
+        
+        
+        
 
         if ypos > thrContainer[0]:
             ABOVE=True
@@ -1038,6 +1147,9 @@ def LineCalculations(G, st, CP):
             
             else:
                 
+                G['eh'].send_message('e_nf_below')
+                G['eh'].send_message('nf_goingup')
+                G['eh'].send_message('b_nf_above')
                 patch_vert=[]
                 old_xpos = vertices[-2][0]
                 old_ypos = vertices[-2][1]
@@ -1066,6 +1178,10 @@ def LineCalculations(G, st, CP):
                 pass 
             else:
                 
+                G['eh'].send_message('e_nf_above')
+                G['eh'].send_message('nf_goingdown')
+                G['eh'].send_message('b_nf_below')
+                
                 old_xpos = vertices[-2][0]
                 old_ypos = vertices[-2][1]
 
@@ -1084,17 +1200,29 @@ def LineCalculations(G, st, CP):
         yield From(asyncio.sleep(G['EX_PR_SLEEPTIME']))
 
 
+
+
+    # markers, III
+    if ylist[-1] > thrContainer[0]:
+        G['eh'].send_message('e_nf_above')
+    else:
+        G['eh'].send_message('e_nf_below')
+        
     is_won = check_win_condition(CP, tlist, ylist, thrlist)
     this_staircase.addResponse(1-is_won)
     this_staircase.otherData['list_up_till_now'][-1].append(is_won)
+    tot_points = calculate_total_points(G, st, CP)
     
-    tot_points = calculate_total_points(G)
-    
+    #print(CP['corr_incorr'])
+    #print(CP['corr_incorr'][0])
+    #print(st['st_incorrect'])
     if is_won == 1:
         CP['corr_incorr'][0] = st['st_correct']
+        CP['corr_incorr'][0].setPos=(0., -0.1)
         print('should draw the st_correct now!!!')
     else:
         CP['corr_incorr'][0] = st['st_incorrect']
+        CP['corr_incorr'][0].setPos=(0., -0.1)
     
     
     if G['EX_INTERACTIONMODE'] == 'master':
@@ -1181,6 +1309,18 @@ def ThermoCalculations(G, st, CP):
 
     curtime=0
     
+    ypos = tuning(CP, nfsignalContainer[0])
+
+
+    # markers, I:    
+    if ypos > thrContainer[0]:
+        ABOVE_PREV = True
+        G['eh'].send_message('b_nf_above')
+    else:
+        ABOVE_PREV = False
+        G['eh'].send_message('b_nf_below')
+    
+    
     
     tlist=[]  # needed to calculate the win condition
     ylist=[]  # this too -- needed to calculate the win condition
@@ -1196,6 +1336,28 @@ def ThermoCalculations(G, st, CP):
         
         # so, what is the y pos?
         ypos = tuning(CP, nfsignalContainer[0])
+
+
+        # markers, II        
+        if ypos > thrContainer[0]:
+            ABOVE=True
+            if ABOVE_PREV==True:
+                pass
+            else:
+                G['eh'].send_message('e_nf_below')
+                G['eh'].send_message('nf_goingup')
+                G['eh'].send_message('b_nf_above')
+                
+        else:
+            ABOVE=False
+            if ABOVE_PREV==True:
+                G['eh'].send_message('e_nf_above')
+                G['eh'].send_message('nf_goingdown')
+                G['eh'].send_message('b_nf_below')
+            else:
+                pass
+                
+        
         
         tlist.append(curtime)
         ylist.append(ypos)
@@ -1214,25 +1376,33 @@ def ThermoCalculations(G, st, CP):
         thermo_thermometer.setVertices(thermovert)
         thermo_thermometer.setFillColor(thermocolor, colorSpace='rgb')
         
+        ABOVE_PREV=ABOVE
         #replacement_thermo = visual.ShapeStim(self.win, lineWidth=1.5, lineColor='white', fillColor=thermocolor, vertices=thermovert)
         #thermo_thermometer_container[0] = replacement_thermo
         yield From(asyncio.sleep(G['EX_PR_SLEEPTIME']))
         # print(thermo_thermometer)
         
         
+        
+    # markers, III
+    if ylist[-1] > thrContainer[0]:
+        G['eh'].send_message('e_nf_above')
+    else:
+        G['eh'].send_message('e_nf_below')
 
 
     is_won = check_win_condition(CP, tlist, ylist, thrlist)
     this_staircase.addResponse(1-is_won)
     this_staircase.otherData['list_up_till_now'][-1].append(is_won)
-    
-    tot_points = calculate_total_points(G)
+    tot_points = calculate_total_points(G, st, CP)
     
     if is_won == 1:
         CP['corr_incorr'][0] = st['st_correct']
-        print('should draw the st_correct now!!!')
+        CP['corr_incorr'][0].setPos=(0., -0.1)
+        # print('should draw the st_correct now!!!')
     else:
         CP['corr_incorr'][0] = st['st_incorrect']
+        CP['corr_incorr'][0].setPos=(0., -0.1)
     
         
     
@@ -1296,6 +1466,17 @@ def SquareCalculations(G, st, CP):
     curtime=0
     square_to_be_colorized = st['square']
     
+    
+    ypos = tuning(CP, nfsignalContainer[0])  #this changes due to the other thread...
+    # markers, I:    
+    if ypos > thrContainer[0]:
+        ABOVE_PREV = True
+        G['eh'].send_message('b_nf_above')
+    else:
+        ABOVE_PREV = False
+        G['eh'].send_message('b_nf_below')
+    
+    
     tlist=[]  # needed to calculate the win condition
     ylist=[]  # this too -- needed to calculate the win condition
     thrlist=[]
@@ -1312,6 +1493,28 @@ def SquareCalculations(G, st, CP):
         ypos = tuning(CP, nfsignalContainer[0])  #this changes due to the other thread...
 
 
+        # markers, II        
+        if ypos > thrContainer[0]:
+            ABOVE=True
+            if ABOVE_PREV==True:
+                pass
+            else:
+                G['eh'].send_message('e_nf_below')
+                G['eh'].send_message('nf_goingup')
+                G['eh'].send_message('b_nf_above')
+                
+        else:
+            ABOVE=False
+            if ABOVE_PREV==True:
+                G['eh'].send_message('e_nf_above')
+                G['eh'].send_message('nf_goingdown')
+                G['eh'].send_message('b_nf_below')
+            else:
+                pass
+                
+
+
+
         tlist.append(curtime)
         ylist.append(ypos)        
         thrlist.append(thrContainer[0])
@@ -1320,6 +1523,7 @@ def SquareCalculations(G, st, CP):
         square_to_be_colorized.setFillColor((rnew, gnew, bnew), colorSpace='rgb')
         square_to_be_colorized.setLineColor('black')
         
+        ABOVE_PREV=ABOVE
         
         yield From(asyncio.sleep(G['EX_PR_SLEEPTIME']))
         # then, what is the color?
@@ -1329,21 +1533,32 @@ def SquareCalculations(G, st, CP):
 
 
 
+    # markers, III
+    if ylist[-1] > thrContainer[0]:
+        G['eh'].send_message('e_nf_above')
+        CP['corr_incorr'][0].pos=(0., -0.1)
+    else:
+        G['eh'].send_message('e_nf_below')
+        CP['corr_incorr'][0].pos=(0., -0.1)
+
+
+
     is_won = check_win_condition(CP, tlist, ylist, thrlist)
-    this_staircase.addResponse(1-is_won)
-    
-    tot_points = calculate_total_points(G)  # the staircases are also in G...
-    
+    this_staircase.addResponse(1-is_won)  
     this_staircase.otherData['list_up_till_now'][-1].append(is_won)
-    
+    tot_points = calculate_total_points(G, st, CP)  # the staircases are also in G...    
     # add some logic to figure out what the total score is!
     # this_staircase.otherData['list_up_till_now'][-1]
     
     if is_won == 1:
         CP['corr_incorr'][0] = st['st_correct']
-        print('should draw the st_correct now!!!')
+        CP['corr_incorr'][0].setPos=(0., -0.1)
+        #print('should draw the st_correct now!!!')
     else:
         CP['corr_incorr'][0] = st['st_incorrect']
+        CP['corr_incorr'][0].setPos=(0., -0.1)
+        #print(st['st_incorrect'].pos)
+        #print(CP['corr_incorr'][0].pos)
     
     
     #    list_up_till_now.append(is_won)
@@ -1512,11 +1727,22 @@ def runTrial(trialType, G, st, CP, ex, loop):
         CP['CURRENTPART'][0] = part
         programs, tdur, stims, messages_start, messages_stop = ex[trialType][part]
         
+        #        if trialType == 'train' and part == 'mark':
+        #            print(stims)
+        #            for s in stims:
+        #                if isinstance(s, list):
+        #                    for s1 in s:
+        #                        print(s1)
+        #                        print(s1.pos)
+        #                else:
+        #                    print(s)
+        #                    print(s.pos)
+        
         if part == 'jitterpause':
             print('Jitter Time: %f' % CP['TJITT'][0])
         
         for message in messages_start:
-            G['win'].callOnFlip(G['eh'].send_message,message)    
+            G['win'].callOnFlip(G['eh'].send_message,message)
 
         if isinstance(tdur,list):  # in case we have set t using CP (control parameter)
             tdur=tdur[0]
@@ -1631,6 +1857,7 @@ def run_main_program(G, st, CP, ex, pr):
         trialType = my_trial_definitions[t_i]
         # print(trialType)
         # trialType, G, st, CP, ex, loop
+        
         loop.run_until_complete(asyncio.wait([asyncio.async(handle_exception(runTrial,trialType, G, st, CP, ex, loop))]))   
     
     
