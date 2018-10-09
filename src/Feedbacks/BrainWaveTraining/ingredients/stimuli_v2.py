@@ -1536,11 +1536,8 @@ def SquareCalculations(G, st, CP):
     # markers, III
     if ylist[-1] > thrContainer[0]:
         G['eh'].send_message('e_nf_above')
-        CP['corr_incorr'][0].pos=(0., -0.1)
     else:
         G['eh'].send_message('e_nf_below')
-        CP['corr_incorr'][0].pos=(0., -0.1)
-
 
 
     is_won = check_win_condition(CP, tlist, ylist, thrlist)
