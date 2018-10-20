@@ -413,7 +413,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         
         G['cl']=clock.Clock()   # init the trial-by-trial clock here and put into G...
         
-        
+        wait_for_key(self.G)  # so just let's wait until we press a key here.
         
 
     # this is called AFTER main loop...
@@ -459,7 +459,7 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
             print(trialType)
             print(CP['TJITT'][0])
             # trialType, G, st, CP, ex, loop
-            self.loop.run_until_complete(asyncio.wait([asyncio.async(handle_exception(runTrial,trialType, G, st, CP, ex, loop))]))   
+            self.loop.run_until_complete(asyncio.wait([asyncio.async(handle_exception(runTrial,trialType, G, st, self.CP, ex, loop))]))   
             
             G['logging'].flush()
             
@@ -507,11 +507,16 @@ class BrainWaveTraining(MostBasicPsychopyFeedback):
         #self.logger.debug("on_control_event: %s" % str(data))
         #self.NFPos = data["data"]
         # but we can change properties of the data --> so can draw stff!
+        # print('received Control Event!')
+        
         
         for key in data.keys():
-            self.CP[key] = data[key]
-            if key == 'nfsignalContainer':
-                self.G['eh'].send_message('recv_nfsignal')
+            # print(key)
+            # print(data)
+            # print(CP['nfsignalContainer'])
+            if key == 'nfsignal':
+                self.CP['nfsignalContainer'][0] = data['nfsignal']
+                # self.G['eh'].send_message('recv_nfsignal')
             elif key == 'corr_incorr:':
                 self.G['eh'].send_message('recv_thr')
             elif key == 'thrContainer':

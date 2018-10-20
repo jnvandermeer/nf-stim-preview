@@ -917,6 +917,7 @@ def GenTestSignal(G, st, CP):
             yield From(asyncio.sleep(G['EX_TESTSIGNALUPDATEINTERVAL']))
 
 
+    
 
 
 @asyncio.coroutine
