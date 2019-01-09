@@ -15,11 +15,11 @@ from psychopy import locale_setup, sound, gui, visual, core, data, event, loggin
 
 
 # some helpers:
-from Feedbacks.EEGfMRILocalizer.efl import eventhandler
-from Feedbacks.EEGfMRILocalizer.efl import visualHelper
+from Feedbacks.StopVigilanceTask.efl import eventhandler
+from Feedbacks.StopVigilanceTask.efl import visualHelper
 
 # the actual experiment:
-from Feedbacks.EEGfMRILocalizer.efl.efl_v12 import * 
+from Feedbacks.StopVigilanceTask.efl.efl_v12 import * 
 
 
 
@@ -30,7 +30,7 @@ from FeedbackBase.MostBasicPsychopyFeedback import MostBasicPsychopyFeedback
 # introduced by trying to get around writing them." (PEP20).
 
 
-class EEGfMRILocalizer(MostBasicPsychopyFeedback):
+class StopVigilanceTask(MostBasicPsychopyFeedback):
     
     # constants to be used throughout the DEFs.
     # TRIGGER VALUES FOR THE PARALLEL PORT (MARKERS)
@@ -72,8 +72,8 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
         self.tooSoonTime=0.0  # if it's pressed before this time --> discard + error
         self.LPT_TRIGGER_WAIT=0.005  # how long are the LPT port pulses?
         self.RECORDFRAMEINTERVALS = True  # for debugging..
-        self.DO_VISUAL = True
-        self.DO_AUDIO = True
+        self.DO_VISUAL = False
+        self.DO_AUDIO = False
         self.DO_GNG = True
         self.GNGSPEED = 1.0
         self.GNG_ARROWGOESRED = True
@@ -272,14 +272,6 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
             
             wait_for_key(G)
             
-            measure_artifact_program(G)
-            
-            test_buttons(G)
-            instr_screen0(G)
-            eo_stim(G)
-            ec_stim(G)
-            logging.flush()
-
             
             test_buttons(G)
             instr_screen(G)
@@ -292,11 +284,6 @@ class EEGfMRILocalizer(MostBasicPsychopyFeedback):
             run_main_loop(G)
             logging.flush()
         
-            eo_stim(G)
-            ec_stim(G)
-            end_task(G)
-            logging.flush()
-            
             
             # close window here.
             G['win'].close()
