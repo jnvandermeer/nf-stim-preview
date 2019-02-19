@@ -45,17 +45,17 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.color=[0, 0, 0]
         self.fontheight=200
         
-        self.STARTKEYS=['return','t']
-        self.MONITOR_PIXWIDTH=1280
-        self.MONITOR_PIXHEIGHT=1024
+        self.STARTKEYS=['return','t','5']
+        self.MONITOR_PIXWIDTH=1920
+        self.MONITOR_PIXHEIGHT=1200
         self.MONITOR_WIDTH=40.  # width of screen
         self.MONITOR_HEIGHT=30.  # height of screen
         self.MONITOR_DISTANCE=70.  # distance to screen
         self.MONITOR_GAMMA=1.
         self.MONITOR_FPS=60.
         self.MONITOR_USEDEGS=True
-        self.MONITOR_DEGS_WIDTHBASE=30
-        self.MONITOR_DEGS_HEIGHTBASE=25
+        self.MONITOR_DEGS_WIDTHBASE=45
+        self.MONITOR_DEGS_HEIGHTBASE=35
         self.MONITOR_FLIPHORIZONTAL = False
         self.MONITOR_FLIPVERTICAL = False
         
@@ -68,7 +68,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.LOGFILEBASE='efl'  # how to call our logfile --> it adds a number each time
         self.IPADDRESS='localhost'  # port and ip to send codes towards to
         self.PORT=6050  # which port is nice?  
-        self.BUTTONS = ['lctrl', 'rctrl']  # the button codes coming out of event.getStim()
+        self.BUTTONS = ['3', '4']  # the button codes coming out of event.getStim()
         self.tooSoonTime=0.0  # if it's pressed before this time --> discard + error
         self.LPT_TRIGGER_WAIT=0.005  # how long are the LPT port pulses?
         self.RECORDFRAMEINTERVALS = True  # for debugging..
@@ -76,10 +76,10 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.DO_AUDIO = False
         self.DO_GNG = True
         self.GNGSPEED = 1.0
-        self.GNG_ARROWGOESRED = True
+        self.GNG_ARROWGOESRED = False
         self.GNG_ARROWGOESRED_DELAY = 0.25
         self.AUDIOTONE_ERROR_COMMISSION = False
-        self.AUDIOTONE_STOP = False
+        self.AUDIOTONE_STOP = True
         self.VIS_SHOWOPPOSITE = False
         self.VIS_radialFreq=6
         self.VIS_angleFreq=6
@@ -90,7 +90,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         
         self.EVENT_destip='127.0.0.1'
         self.EVENT_destport=6050
-        self.EVENT_LPTAddress=0x0378
+        self.EVENT_LPTAddress=0xD050
         self.EVENT_LPTTrigWaitTime=0.005
         self.EVENT_TRIGLOG='log/triggerlog.log'
         self.EVENT_sendParallel=True
@@ -276,14 +276,14 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
             test_buttons(G)
             instr_screen(G)
             logging.flush()
-            
+            wait_for_key(G)
             # print(G['eh'].is_alive())
             # print('----><----')
             # G['eh'].send_message('boe!')
             # print('----><----')
             run_main_loop(G)
             logging.flush()
-        
+            end_task(G)
             
             # close window here.
             G['win'].close()
