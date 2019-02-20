@@ -488,10 +488,10 @@ def init_stimuli(G):
                   (0, 1),(0, 0.7071/arrowPinch), 
                   (-0.7071, 0.7071/arrowPinch)]
     
-    arrowl = visual.ShapeStim(win, vertices=arrowVert, fillColor='white', 
+    arrowl = visual.ShapeStim(win, vertices=arrowVert, fillColor='green', 
                              size=stimSize/1.973, ori=180, lineColor='white', autoLog=AUTOLOGIT)
     
-    arrowr = visual.ShapeStim(win, vertices=arrowVert, fillColor='white', 
+    arrowr = visual.ShapeStim(win, vertices=arrowVert, fillColor='green', 
                              size=stimSize/1.973, ori=0, lineColor='white', autoLog=AUTOLOGIT)
     
     arrowlr = visual.ShapeStim(win, vertices=arrowVert, fillColor='darkred', 
