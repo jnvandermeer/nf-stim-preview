@@ -46,6 +46,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.fontheight=200
         
         self.STARTKEYS=['return','t','5']
+        self.STARTMRIKEYS = ['return','t','5']
         self.MONITOR_PIXWIDTH=1920
         self.MONITOR_PIXHEIGHT=1200
         self.MONITOR_WIDTH=40.  # width of screen
@@ -76,10 +77,11 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.DO_AUDIO = False
         self.DO_GNG = True
         self.GNGSPEED = 1.0
-        self.GNG_ARROWGOESRED = False
-        self.GNG_ARROWGOESRED_DELAY = 0.25
+        self.GNG_ARROWISALWAYSRED = True
+        self.GNG_ARROWGOESRED = True
+        self.GNG_ARROWGOESRED_DELAY = 0.005
         self.AUDIOTONE_ERROR_COMMISSION = False
-        self.AUDIOTONE_STOP = True
+        self.AUDIOTONE_STOP = False
         self.VIS_SHOWOPPOSITE = False
         self.VIS_radialFreq=6
         self.VIS_angleFreq=6
@@ -116,6 +118,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         # do the trick -- SAVE all of those things! --> and put it in settings.pkl.
         v=dict()
         v['STARTKEYS']                      =self.STARTKEYS
+        v['STARTMRIKEYS']                   =self.STARTMRIKEYS
         v['MONITOR_PIXWIDTH']               =self.MONITOR_PIXWIDTH
         v['MONITOR_PIXHEIGHT']              =self.MONITOR_PIXHEIGHT
         v['MONITOR_WIDTH']                  =self.MONITOR_WIDTH  # width of screen
@@ -147,6 +150,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         v['DO_GNG']                         =self.DO_GNG
         v['GNGSPEED']                       =self.GNGSPEED
         v['GNG_ARROWGOESRED']               =self.GNG_ARROWGOESRED
+        v['GNG_ARROWISALWAYSRED']           =self.GNG_ARROWISALWAYSRED
         v['GNG_ARROWGOESRED_DELAY']         =self.GNG_ARROWGOESRED_DELAY
         v['AUDIOTONE_ERROR_COMMISSION']     =self.AUDIOTONE_ERROR_COMMISSION
         v['AUDIOTONE_STOP']                 =self.AUDIOTONE_STOP
@@ -276,7 +280,8 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
             test_buttons(G)
             instr_screen(G)
             logging.flush()
-            wait_for_key(G)
+            # wait_for_key(G)
+            wait_for_mri(G)
             # print(G['eh'].is_alive())
             # print('----><----')
             # G['eh'].send_message('boe!')

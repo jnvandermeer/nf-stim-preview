@@ -23,7 +23,7 @@ import sys
 import traceback
 
 
-from psychopy import visual, clock, data
+from psychopy import visual, clock, data, sound
 import numpy as np
 import random
 import threading
@@ -31,6 +31,7 @@ import time
 import copy
 import re
 import pickle
+import ipdb
 
 
 # let's try using async to keep all things into the Main Thread.
@@ -112,6 +113,10 @@ G['EX_COLORGAP'] = 1  # the gap between colors when thr is passed. -- uses the c
 
 G['EX_PR_SLEEPTIME'] = 0.01 # 0.01  # how long do we 'sleep' in our main program threads? (screen update is ~0.0016 seconds)
 
+G['EX_EMG_THERMOWIDTH'] = 0.2
+G['EX_EMG_THERMOHEIGHT'] = 0.05
+G['EX_EMG_THERMOEDGE'] = 0.05
+
 
 # so these are NOW control parameters:
 G['EX_TUNING_TYPE'] = 'thr'  # alternatives are 'linear', and maybe 'fancy'
@@ -123,6 +128,18 @@ G['EX_NUMBEROFSETS'] = 6  # how long (sets of 6) do we wish our experiment to ha
 G['EX_MIXOFSETS'] = {'train':3, 'transfer':1, 'observe':1, 'rest':1}
 G['EX_STAIRIDENTIFIER'] = '0001'  # needed to keep track of the staircases.
 G['EX_XorV_RESET_POINTS'] = False  # at the start of the day --> this should be True.
+
+
+
+G['EX_EMG_THERMOWIDTH'] = 0.075
+G['EX_EMG_THERMOHEIGHT'] = 0.2
+G['EX_EMG_THERMOEDGE'] = 0.05
+
+G['EX_TXT_COUNTER'] = [0]
+
+G['EX_SND_LOWESTTONE'] = 27
+G['EX_SND_HIGHESTTONE'] = 48
+
 
 
 G['MONITOR_PIXWIDTH']=1280
@@ -146,6 +163,7 @@ G['MONITOR_ALLOWGUI'] = False
 
 
 
+
 # control parameters for the NF Experiment, things that change due to programs or fcalls, etc.
 CP=dict()
 CP['nfsignalContainer'] = [0]
@@ -158,7 +176,13 @@ CP['TUNING_TYPE'] = G['EX_TUNING_TYPE']  # copy/paste into CP, to be (changed) l
 CP['TUNING_PARAMS'] = G['EX_TUNING_PARAMS']  # same here -- but, it is a list.
 CP['TrialType'] = [None]
 CP['WIN_CONDITION'] = G['EX_WIN_CONDITION']
-CP['WIN_PARAMS'] = G['EX_WIN_PARAMS'] 
+CP['WIN_PARAMS'] = G['EX_WIN_PARAMS']
+CP['EX_TXT_COUNTER'] = G['EX_TXT_COUNTER']
+
+CP['hitError'] = []
+CP['hit'] = []
+CP['emgThrContainer'] = [None]
+CP['emgContainer'] = [None]
 
 
 
@@ -431,8 +455,47 @@ def make_stimuli(G, CP):
     
 
     
+
+    # ipdb.set_trace()
+
+
+    # initialize the sounds, too:
+    stimsdir = os.path.join(os.path.dirname(__file__),'sounds')
+    
+    st['chimes'] = [sound.backend_pygame.SoundPygame(value=os.path.join(stimsdir, 'tone-%d.wav' % i),loops=0) for i in range(G['EX_SND_LOWESTTONE'],G['EX_SND_HIGHESTTONE'])]
     
     
+    # initialize the EMG NF    
+    twidth=G['EX_EMG_THERMOWIDTH']
+    theight=G['EX_EMG_THERMOHEIGHT']
+    tedge=G['EX_EMG_THERMOEDGE']
+    tfactor=1.03
+    
+    # the EMG Feedback:    
+    st['emg_feedback_window'] = visual.Rect(G['win'], width=twidth*tfactor, height=theight*tfactor, pos=(-1+tedge+0.5*twidth, -1+tedge+0.5*theight),                fillColor=[-0.5,-0.5,-0.5],  lineColor=[1,1,1])
+    st['emg_feedback']        = visual.Rect(G['win'], width=twidth,         height=theight,         pos=(-1+tedge+0.5*twidth, -1+tedge+0.5*theight),                 fillColor=[0.5,-0.5,-0.5], lineColor=[-0.8,-0,-0.1], lineWidth=0)
+    
+    EMG_THR_FACTOR=0.2
+    st['emg_feedback_thresh'] = visual.Line(G['win'], start=(-1+tedge+0.5*twidth - twidth/2.0,  -1+tedge+EMG_THR_FACTOR*theight), end=(-1+tedge+0.5*twidth+twidth/2.0,  -1+tedge+EMG_THR_FACTOR*theight), lineWidth=G['EX_THRLINEWIDTH'])
+    
+    
+    # and the Counter:
+    st['counter'] =  visual.TextStim(win, text=G['EX_TXT_COUNTER'][0],units='norm', pos=(0.9, -0.9))
+    
+    # a crosshair - not an arrow or anything like that
+    st['crosshair'] = visual.TextStim(win, text='+', units='norm', pos=(0, 0))
+    
+    # scale them, too...
+    items=[st['emg_feedback'], st['emg_feedback_window'], st['counter'], st['crosshair'], st['emg_feedback_thresh']] #, thermo_thermometer_silent]
+    # scale it:
+    for i in items:
+        oldpos = i.pos        
+        i.setPos((oldpos[0] *   SCALING[0],    oldpos[1] *      SCALING[1]    ))          
+        if not isinstance(i, visual.TextStim):
+            oldsize=i.size
+            i.setSize((oldsize[0]*SCALING[0], oldsize[1]*SCALING[1])) 
+    
+    st['counter']
 
     
     return st
@@ -742,7 +805,7 @@ def init_staircases_quest(G):
                 staircase=prev_staircases[qtype])
     
     
-    # we try to get all of the responses up till now.
+        # we try to get all of the responses up till now.
         quest_staircase[qtype].addOtherData('list_up_till_now',list_up_till_now[qtype])
     G['staircases'] = quest_staircase  
     #    while thisVal in staircase:
@@ -784,37 +847,37 @@ def define_experiment(G, st, pr, CP):
     
     
     # for each trial type, show what's going the be on the screen...
-    ex['line']['train']['sequence']             = ['instruction', 'pause', 'feedback', 'veryshortpause1', 'veryshortpause2', 'mark', 'jitterpause' ]
-    ex['line']['train']['instruction']          = ([],                                  TINSTR,      [st['background'], st['st_txt_upregulate']],                                   ['instruction','itrain'], [])
+    ex['line']['train']['sequence']             = ['instruction', 'pause', 'feedback', 'veryshortpause1', 'jitterpause' ]
+    ex['line']['train']['instruction']          = ([],                                  TINSTR,      [st['background'], st['crosshair']],                                                             ['instruction','itrain'], [])
     ex['line']['train']['pause']                = ([pr['pickRandomJitter']],            TPAUSE,      [st['background']],                                                            [], [])
-    ex['line']['train']['feedback']             = ([pr['LineCalculations']],            TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    ['bFB','btrain'], ['eFB','etrain'])
-    ex['line']['train']['veryshortpause1']      = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    [], [])
+    ex['line']['train']['feedback']             = ([pr['LineCalculations']],            TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb'], st['emg_feedback_window'], st['emg_feedback'],st['counter'], st['emg_feedback_thresh']],    ['bFB','btrain'], ['eFB','etrain'])
+    ex['line']['train']['veryshortpause1']      = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb'], st['emg_feedback_window'], st['emg_feedback'],st['counter'], st['emg_feedback_thresh']],    [], [])
     ex['line']['train']['veryshortpause2']      = ([],                                  TVSP,        [st['background']],                                                            [], [])
     ex['line']['train']['mark']                 = ([],                                  TMARK,       [st['background'], CP['corr_incorr']],                                         ['XorV','xorvtrain'], [])
     ex['line']['train']['jitterpause']          = ([],                                  CP['TJITT'], [st['background']],                                                            ['bISI','bisitrain'], ['eISI','eisitrain'])
     
     
-    ex['line']['transfer']['sequence']          = ['instruction', 'pause', 'feedback', 'veryshortpause', 'mark', 'jitterpause' ]
-    ex['line']['transfer']['instruction']       = ([],                                  TINSTR,      [st['background'], st['st_txt_upregulate']],                                   ['instruction','itransfer'], [])
+    ex['line']['transfer']['sequence']          = ['instruction', 'pause', 'feedback', 'veryshortpause', 'jitterpause' ]
+    ex['line']['transfer']['instruction']       = ([],                                  TINSTR,      [st['background'], st['crosshair']],                                   ['instruction','itransfer'], [])
     ex['line']['transfer']['pause']             = ([pr['pickRandomJitter']],            TPAUSE,      [st['background']],                                                            [], [])
-    ex['line']['transfer']['feedback']          = ([pr['LineCalculations']],            TFB,         [st['background'], st['thrline']],                                             ['bFB','btransfer'], ['eFB','etransfer'])
+    ex['line']['transfer']['feedback']          = ([pr['LineCalculations']],            TFB,         [st['background'], st['thrline'], st['emg_feedback_window'], st['emg_feedback'],st['counter'], st['emg_feedback_thresh']],                                             ['bFB','btransfer'], ['eFB','etransfer'])
     ex['line']['transfer']['veryshortpause']    = ([],                                  TVSP,        [st['background']],                                                            [], [])
     ex['line']['transfer']['mark']              = ([],                                  TMARK,       [st['background'], CP['corr_incorr']],                                         ['XorV', 'xorvtransfer'], [])
     ex['line']['transfer']['jitterpause']       = ([],                                  CP['TJITT'], [st['background']],                                                            ['bISI','bisitransfer'], ['eISI','eisitransfer'])
     
     
     ex['line']['observe']['sequence']           = ['instruction', 'pause', 'feedback', 'veryshortpause', 'jitterpause' ]
-    ex['line']['observe']['instruction']        = ([],                                  TINSTR,      [st['background'], st['st_txt_noregulate']],                                   ['instruction','iobserve'], [])
+    ex['line']['observe']['instruction']        = ([],                                  TINSTR,      [st['background'], st['crosshair']],                                   ['instruction','iobserve'], [])
     ex['line']['observe']['pause']              = ([pr['pickRandomJitter']],            TPAUSE,      [st['background']],                                                            [], [])
-    ex['line']['observe']['feedback']           = ([pr['LineCalculations']],            TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    ['bFB','bobserve'], ['eFB','eobserve'])
-    ex['line']['observe']['veryshortpause']     = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb']],    [], [])
+    ex['line']['observe']['feedback']           = ([pr['LineCalculations']],            TFB,         [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb'], st['emg_feedback_window'], st['emg_feedback'],st['counter'], st['emg_feedback_thresh']],    ['bFB','bobserve'], ['eFB','eobserve'])
+    ex['line']['observe']['veryshortpause']     = ([],                                  TVSP,        [st['background'], st['patches'], st['thrline'], st['nf_line'], st['cfb'], st['emg_feedback_window'], st['emg_feedback'],st['counter'], st['emg_feedback_thresh']],    [], [])
     ex['line']['observe']['jitterpause']        = ([],                                  CP['TJITT'], [st['background']],                                                            ['bISI','bisiobserve'], ['eISI','eisiobserve'])
 
     
     ex['line']['rest']['sequence']              = ['instruction', 'pause', 'feedback', 'jitterpause' ]
-    ex['line']['rest']['instruction']           = ([],                                  TINSTR,      [st['background'], st['st_txt_noregulate']],                                   ['instruction','irest'], [])
+    ex['line']['rest']['instruction']           = ([],                                  TINSTR,      [st['background'], st['crosshair']],                                   ['instruction','irest'], [])
     ex['line']['rest']['pause']                 = ([pr['pickRandomJitter']],            TPAUSE,      [st['background']],                                                            [], [])
-    ex['line']['rest']['feedback']              = ([pr['LineCalculations']],            TFB,         [st['background'], st['thrline']],                                             ['bFB', 'brest'], ['eFB', 'erest'])
+    ex['line']['rest']['feedback']              = ([pr['LineCalculations']],            TFB,         [st['background'], st['crosshair']],                                             ['bFB', 'brest'], ['eFB', 'erest'])
     ex['line']['rest']['jitterpause']           = ([],                                  CP['TJITT'], [st['background']],                                                            ['bISI','bisirest'],['eISI','eisirest'])
 
 
@@ -872,13 +935,59 @@ def define_experiment(G, st, pr, CP):
              ex[key]['transfer']['mark'][2].append(st['point_summary'])
 
 
-    
 
     return ex[G['EX_GRAPHICSMODE']]
 
 
 
 #%% The PROGRAMS
+
+
+
+@asyncio.coroutine
+def HandleNF(G, st, CP):
+    '''
+    What this function does (coroutine):
+        a) depending on the NF signal -- change the line
+        b) keep track of patches
+        c) check for any triggers (i.e. successes) IF any occur:
+            1) make current Patch Green (or last one)
+            2) Play Sound according to intensity that was given (?)
+            3) Update the Counter
+            4) Provide the necessary triggers
+    '''
+    
+    
+    pass
+
+
+
+
+
+
+
+@asyncio.coroutine
+def HandleEMG(G, st, CP):
+    '''
+     a) depending on the NF signal -- change the thermo
+     b) check for any triggers -- do the following:
+            1) change color of the thermo to RED instead of GREEN
+            2) Play Sound according to intensity
+            3) Provide the necessary triggers
+    '''
+    
+    
+    pass
+
+
+
+
+
+
+    
+
+
+
 
 @asyncio.coroutine
 def GenTestSignal(G, st, CP):
@@ -915,6 +1024,49 @@ def GenTestSignal(G, st, CP):
             signal = sin(cl.getTime() / float(period) * 2. * pi)
             lst[0]=signal
             yield From(asyncio.sleep(G['EX_TESTSIGNALUPDATEINTERVAL']))
+            
+
+
+
+
+def GenTestSignalEMG(G, st, CP):
+    '''
+    This thread generates another test signal - for use with EMG signal
+    returns an amplitude-modulated random signal with the amp a bit faster than 
+    the test signal...
+    
+    Just like the other signal -- and all stimuli - everything between -1 and +1
+    And... handle events in the separate Program EMG handler + NF handler
+    In there comes all the magic.
+    
+    '''
+    
+    
+    # print('debug: GenTestSignal is Started!')
+    
+    G['GenTestSignalRunning'] = True
+    
+    lst=CP['emgContainer']
+
+
+    period = G['EX_TESTSIGNALPERIOD']
+    from math import sin, pi
+        
+    
+    while G['GenTestSignalRunning'] is True:
+
+        cl=clock.Clock()
+        
+        signal = random.random()/2 + 0.25
+        
+        signal_amp= sin(cl.getTime() / float(period)/0.5 * 2. * pi)
+    
+        lst[0]=signal*signal_amp
+        
+        yield From(asyncio.sleep(G['EX_TESTSIGNALUPDATEINTERVAL']))
+    
+        
+                
 
 
 
@@ -994,10 +1146,18 @@ def my_color_calculator(hb, he, thr, gap, y, ymax, ymin):
 
 
 
+
 @asyncio.coroutine    
 def LineCalculations(G, st, CP):
     '''
     This will start up, for a period specified within the G, changes to the shapes for the LINESTIM type of NF
+    
+    Todo:
+        - remove the auto-threshold-updating machinery
+        - update EMG + EMG Threshold 'bar', using code from below RED = wrong, GREEN = good - that code excursion was useful after all..
+        - don't draw in (yet) the patches - do current patch when condition is met (i.e., it's 1)
+        ... I think that is it for this.
+    
     '''
     
     win = G['win']  # our window..
@@ -1583,6 +1743,7 @@ def init_programs(G, st, CP):
     pr['ThermoCheck'] = ThermoCheck
     pr['LineCheck'] = LineCheck
     pr['GenTestSignal']=GenTestSignal
+    pr['GenTestSignalEMG']=GenTestSignalEMG
 
     pr['pickRandomJitter']=pickRandomJitter
 
@@ -1847,6 +2008,8 @@ def run_main_program(G, st, CP, ex, pr):
     
     if G['EX_TESTNFNOISE'] is True:
         loop.create_task(pr['GenTestSignal'](G, st, CP))
+        loop.create_task(pr['GenTestSignalEMG'](G, st, CP))
+        
 
     
     # so to debug, just run tasks_dbg instead of tasks.

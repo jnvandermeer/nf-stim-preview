@@ -82,6 +82,8 @@ def init_G():  # so we do this ourselves in the pyff framework:
         
         
         v['STARTKEYS'] = ['return','t']
+        v['STARTMRIKEYS'] = ['5']
+        
         v['MONITOR_PIXWIDTH']=1280
         v['MONITOR_PIXHEIGHT']=1024
         v['MONITOR_WIDTH']=40.  # width of screen
@@ -112,16 +114,19 @@ def init_G():  # so we do this ourselves in the pyff framework:
         v['DO_AUDIO'] = True
         v['DO_GNG'] = True
         v['GNGSPEED'] = 1.0
-        v['GNG_ARROWGOESRED'] = False
-        v['GNG_ARROWGOESRED_DELAY'] = 0.25
+        v['GNG_ARROWISALWAYSRED'] = True
+        v['GNG_ARROWGOESRED'] = True
+        v['GNG_ARROWGOESRED_DELAY'] = 0.005
         v['AUDIOTONE_ERROR_COMMISSION'] = False
-        v['AUDIOTONE_STOP'] = True
+        v['AUDIOTONE_STOP'] = False
         v['VIS_SHOWOPPOSITE'] = False
         v['VIS_radialFreq']=6
         v['VIS_angleFreq']=6
         v['VIS_checkerSize']=1.5
         v['VIS_checkerSpeedMultiplier']=1.0
         v['EYESCLOSED_TIME']=25.
+        
+        
         
         v['EVENT_destip']='127.0.0.1'
         v['EVENT_destport']=6050
@@ -837,6 +842,8 @@ def handle_gonogo(G):
  
     GNG_ARROWGOESRED=G['v']['GNG_ARROWGOESRED']
     GNG_ARROWGOESRED_DELAY=G['v']['GNG_ARROWGOESRED_DELAY']
+    GNG_ARROWISALWAYSRED=G['v']['GNG_ARROWISALWAYSRED']
+    
     BUTTONS=G['S']['BUTTONS']
     snd_stopsignal=G['S']['snd_stopsignal']
     # we just need it here...
@@ -1011,6 +1018,15 @@ def handle_gonogo(G):
             reactionTime = None
             ShowFix=False
             event.clearEvents()
+            
+            
+            
+            if thisTrialType is STOP and GNG_ARROWISALWAYSRED:
+                G['S']['goNogoStim']=G['vstims']['S'][thisDirection+'r']
+            
+            
+            
+            
             while currentTime < 1.0 * GNGSPEED:
                 currentTime = cl.getTime()
                 
@@ -2050,6 +2066,39 @@ def wait_for_key(G):
                 incorr_str = visual.TextStim(win, INCORRECT_TEXT,pos=(0, -0.5), units='norm')
                 drawIncorrect=True
                 incor_clock.reset()
+                
+                
+                
+def wait_for_mri(G):
+    event.clearEvents()
+    win=G['win']
+    eh=G['eh']
+    
+    testinstr=visual.TextStim(win, 'Waiting for Start MRI...',pos=(0, 0), units='norm')
+    incor_clock=clock.Clock()
+    correctlyPressed=False
+    drawIncorrect=False
+    
+    while not correctlyPressed:
+        testinstr.draw()
+        if drawIncorrect is True and incor_clock.getTime() < 1.0:
+            incorr_str.draw()
+        else:
+            drawIncorrect=False
+        win.flip()
+
+                
+        evs=event.getKeys(timeStamped=incor_clock)
+        if len(evs) > 0:
+            buttonsPressed, timesPressed = zip(*evs)
+            buttonPressed=buttonsPressed[0]
+            if buttonsPressed[0] in G['v']['STARTMRIKEYS']:
+                correctlyPressed=True
+            else:
+                INCORRECT_TEXT='One moment of patience..  (You pressed: %s)' % (buttonPressed)
+                incorr_str = visual.TextStim(win, INCORRECT_TEXT,pos=(0, -0.5), units='norm')
+                drawIncorrect=True
+                incor_clock.reset()                
                         
     
 def test_buttons(G):

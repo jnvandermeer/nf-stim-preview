@@ -106,9 +106,14 @@ class BrainWaveTraining_II(MostBasicPsychopyFeedback):
         self.EX_BUTTONS = ['lctrl', 'rctrl']  # the button codes coming out of event.getStim()
         self.EX_INSTR = 'Upregulate: Focus on moving upwards / more green'    
         self.EX_RUNS = 5 # how many runs-of-6?
-        
-        
-        
+
+        self.EX_SND_LOWESTTONE = 27
+        self.EX_SND_HIGHESTTONE = 48
+        self.EX_EMG_THERMOWIDTH = 0.075
+        self.EX_EMG_THERMOHEIGHT = 0.2
+        self.EX_EMG_THERMOEDGE = 0.05
+        self.EX_TXT_COUNTER = [0]
+
         # so these are NOW control parameters:
         self.EX_TUNING_TYPE = 'thr'  # alternatives are 'linear', and maybe 'fancy'
         self.EX_TUNING_PARAMS = [1.0, 0.0]  # linear requires a slope and offset. - eill not be used if it's not 'linear'
@@ -143,6 +148,8 @@ class BrainWaveTraining_II(MostBasicPsychopyFeedback):
         self.MONITOR_FULLSCR = False
         self.MONITOR_ALLOWGUI = False
         
+        self.SND_LOWESTTONE = 27
+        self.SND_HIGHESTTONE = 48
 
         # self.LOG_FILEBASE='efl'  # how to call our logfile --> it adds a number each time
         # self.IPADDRESS='localhost'  # port and ip to send codes towards to
@@ -179,9 +186,14 @@ class BrainWaveTraining_II(MostBasicPsychopyFeedback):
         CP['TUNING_PARAMS'] = self.EX_TUNING_PARAMS #']  # same here -- but, it is a list.
         CP['TrialType'] = [None]
         CP['WIN_CONDITION'] = self.EX_WIN_CONDITION
-        CP['WIN_PARAMS'] = self.EX_WIN_PARAMS 
+        CP['WIN_PARAMS'] = self.EX_WIN_PARAMS
+        CP['EX_TXT_COUNTER'] = self.EX_TXT_COUNTER
 
-        
+        CP['hitError'] = []
+        CP['hit'] = []
+        CP['emgThrContainer'] = [None]
+        CP['emgContainer'] = [None]
+
         self.CP = CP
         
         
@@ -263,6 +275,16 @@ class BrainWaveTraining_II(MostBasicPsychopyFeedback):
         v['EX_RUNS']                        = self.EX_RUNS
 
 
+        v['EX_SND_LOWESTTONE']              = self.EX_SND_LOWESTTONE
+        v['EX_SND_HIGHESTTONE']             = self.EX_SND_HIGHESTTONE
+
+        v['EX_EMG_THERMOWIDTH']             = self.EX_EMG_THERMOWIDTH
+        v['EX_EMG_THERMOHEIGHT']            = self.EX_EMG_THERMOHEIGHT
+        v['EX_EMG_THERMOEDGE']              = self.EX_EMG_THERMOEDGE
+
+        v['EX_TXT_COUNTER']                 = self.EX_TXT_COUNTER
+
+
 
         v['MONITOR_PIXWIDTH']               = self.MONITOR_PIXWIDTH
         v['MONITOR_PIXHEIGHT']              = self.MONITOR_PIXHEIGHT
@@ -297,6 +319,7 @@ class BrainWaveTraining_II(MostBasicPsychopyFeedback):
         v['EVENT_printToTerminal']          = self.EVENT_printToTerminal
         v['EVENT_printToTerminalAllowed']   = self.EVENT_printToTerminalAllowed
         
+
         
                 # so these are NOW control parameters:
         v['EX_TUNING_TYPE']                 = self.EX_TUNING_TYPE # = 'thr'  # alternatives are 'linear', and maybe 'fancy'
