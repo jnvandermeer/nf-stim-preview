@@ -117,6 +117,7 @@ def init_G():  # so we do this ourselves in the pyff framework:
         v['GNG_ARROWISALWAYSRED'] = True
         v['GNG_ARROWGOESRED'] = True
         v['GNG_ARROWGOESRED_DELAY'] = 0.005
+        v['GNG_SELECT_NUMBER'] = 0  # if it's a 0 -- then select randomly.        
         v['AUDIOTONE_ERROR_COMMISSION'] = False
         v['AUDIOTONE_STOP'] = False
         v['VIS_SHOWOPPOSITE'] = False
@@ -125,6 +126,8 @@ def init_G():  # so we do this ourselves in the pyff framework:
         v['VIS_checkerSize']=1.5
         v['VIS_checkerSpeedMultiplier']=1.0
         v['EYESCLOSED_TIME']=25.
+        
+        v['EX_EV_IGNORE_KEYS']=['5','t']
         
         
         
@@ -716,6 +719,7 @@ def init_gng(G):
     tooSoonTime=G['v']['tooSoonTime']
     AUDIOTONE_ERROR_COMMISSION=G['v']['AUDIOTONE_ERROR_COMMISSION']
     AUDIOTONE_STOP=G['v']['AUDIOTONE_STOP']
+    GNG_SELECT_NUMBER=G['v']['GNG_SELECT_NUMBER']
     
     
     G['S']=dict()
@@ -751,7 +755,12 @@ def init_gng(G):
     # Obtain the Go Nogo Timing Parameters
     # for stop-signal task: read in the critucal timings from one of my 500 
     # OPTIMAL GLM Design specifications:
-    tmp_rand_number = random.randint(1,193)
+    
+    if GNG_SELECT_NUMBER == 0:
+        tmp_rand_number = random.randint(1,193)
+    else:
+        tmp_rand_number = int(GNG_SELECT_NUMBER)  # shameless typecasting.
+    
     
     
     timingsfile='gngtimings/newparam_%d.txt' % tmp_rand_number
@@ -843,6 +852,7 @@ def handle_gonogo(G):
     GNG_ARROWGOESRED=G['v']['GNG_ARROWGOESRED']
     GNG_ARROWGOESRED_DELAY=G['v']['GNG_ARROWGOESRED_DELAY']
     GNG_ARROWISALWAYSRED=G['v']['GNG_ARROWISALWAYSRED']
+    EX_EV_IGNORE_KEYS=G['v']['EX_EV_IGNORE_KEYS']
     
     BUTTONS=G['S']['BUTTONS']
     snd_stopsignal=G['S']['snd_stopsignal']
@@ -956,7 +966,13 @@ def handle_gonogo(G):
             G['S']['goNogoStim']=G['vstims']['S']['pre']
             while cl.getTime() < 0.5 * GNGSPEED:
                 
+                # event.getKeys(keyList=[SCANNER_KEY])  # get out the scanner keys, if it's there...
                 evs=event.getKeys(timeStamped=cl)
+                # so remove all the MRI_Keys from this? - that should be OK. No other buttons should be pressed anyway.
+                evs=[(key, time) for (key, time) in evs if key not in EX_EV_IGNORE_KEYS]  # named tuple unpacking, in a list comprehension, and conditional. ... and.. READABLE.
+
+                
+                
                 # check if they press too SOON:
                 if len(evs)>0 and not responded:
                     buttonsPressed, timesPressed = zip(*evs)
@@ -1034,6 +1050,7 @@ def handle_gonogo(G):
                 # make the arrow (+ circle)
     
                 evs=event.getKeys(timeStamped=cl)
+                evs=[(key, time) for (key, time) in evs if key not in EX_EV_IGNORE_KEYS]
                 
                 
                 if len(evs)>0:
@@ -1201,6 +1218,7 @@ def handle_gonogo(G):
                     flushed=True
                     
                 evs=event.getKeys(timeStamped=cl)
+                evs=[(key, time) for (key, time) in evs if key not in EX_EV_IGNORE_KEYS]
                                 # do this anyway.
                 if len(evs)>0:
                     buttonsPressed, timesPressed = zip(*evs)

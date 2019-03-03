@@ -106,6 +106,7 @@ class BrainWaveTraining_II(MostBasicPsychopyFeedback):
         self.EX_BUTTONS = ['lctrl', 'rctrl']  # the button codes coming out of event.getStim()
         self.EX_INSTR = 'Upregulate: Focus on moving upwards / more green'    
         self.EX_RUNS = 5 # how many runs-of-6?
+        self.EX_EV_IGNORE_KEYS = ['5','t']
 
         self.EX_SND_LOWESTTONE = 27
         self.EX_SND_HIGHESTTONE = 48

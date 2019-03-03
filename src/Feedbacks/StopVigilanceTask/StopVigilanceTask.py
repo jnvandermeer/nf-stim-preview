@@ -47,6 +47,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         
         self.STARTKEYS=['return','t','5']
         self.STARTMRIKEYS = ['return','t','5']
+        self.EX_EV_IGNORE_KEYS=['5','t']
         self.MONITOR_PIXWIDTH=1920
         self.MONITOR_PIXHEIGHT=1200
         self.MONITOR_WIDTH=40.  # width of screen
@@ -69,7 +70,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.LOGFILEBASE='efl'  # how to call our logfile --> it adds a number each time
         self.IPADDRESS='localhost'  # port and ip to send codes towards to
         self.PORT=6050  # which port is nice?  
-        self.BUTTONS = ['3', '4']  # the button codes coming out of event.getStim()
+        self.BUTTONS = ['2', '3']  # the button codes coming out of event.getStim()
         self.tooSoonTime=0.0  # if it's pressed before this time --> discard + error
         self.LPT_TRIGGER_WAIT=0.005  # how long are the LPT port pulses?
         self.RECORDFRAMEINTERVALS = True  # for debugging..
@@ -80,6 +81,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.GNG_ARROWISALWAYSRED = True
         self.GNG_ARROWGOESRED = True
         self.GNG_ARROWGOESRED_DELAY = 0.005
+        self.GNG_SELECT_NUMBER = 182
         self.AUDIOTONE_ERROR_COMMISSION = False
         self.AUDIOTONE_STOP = False
         self.VIS_SHOWOPPOSITE = False
@@ -88,6 +90,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.VIS_checkerSize=1.5
         self.VIS_checkerSpeedMultiplier=1.0
         self.EYESCLOSED_TIME=25.
+        
         
         
         self.EVENT_destip='127.0.0.1'
@@ -101,7 +104,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         self.EVENT_printToTerminal=True
         self.EVENT_printToTerminalAllowed=[0, 40]  # only allow the stops, which are < 40.
         
-        self.INSTR='Remember, respond as FAST as you can once you see the arrow.\n\n'+'However, if you hear a beep, your task is to STOP yourself '+'from pressing.\n\n'+'Stopping and Going are equally important.'
+        self.INSTR='Remember, respond as FAST as you can once you see the arrow.\n\n'+'However, your task is to STOP yourself from pressing if it''s red.\n\n'+'Stopping and Going are equally important.'
 
         
         
@@ -152,6 +155,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         v['GNG_ARROWGOESRED']               =self.GNG_ARROWGOESRED
         v['GNG_ARROWISALWAYSRED']           =self.GNG_ARROWISALWAYSRED
         v['GNG_ARROWGOESRED_DELAY']         =self.GNG_ARROWGOESRED_DELAY
+        v['GNG_SELECT_NUMBER']              =self.GNG_SELECT_NUMBER
         v['AUDIOTONE_ERROR_COMMISSION']     =self.AUDIOTONE_ERROR_COMMISSION
         v['AUDIOTONE_STOP']                 =self.AUDIOTONE_STOP
         v['VIS_SHOWOPPOSITE']               =self.VIS_SHOWOPPOSITE
@@ -160,6 +164,7 @@ class StopVigilanceTask(MostBasicPsychopyFeedback):
         v['VIS_checkerSize']                =self.VIS_checkerSize
         v['VIS_checkerSpeedMultiplier']     =self.VIS_checkerSpeedMultiplier
         v['EYESCLOSED_TIME']                =self.EYESCLOSED_TIME
+        v['EX_EV_IGNORE_KEYS']              =self.EX_EV_IGNORE_KEYS
         
         v['EVENT_destip']                   =self.EVENT_destip
         v['EVENT_destport']                 =self.EVENT_destport
