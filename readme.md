@@ -20,11 +20,11 @@ A typical workflow exists of, when it comes to stimulus computer:
 
 Enter the src directory and start FeedbackController:
 
-    ```bash
-    conda activate st
-    cd nf-stim/src
-    python FeedbackController.py
-    ```
+```
+conda activate st
+cd nf-stim/src
+python FeedbackController.py
+```
 At this stage you can either 
  - start up experiments from the GUI, this will just run an experiment without feedback
   - or use the real-time computer to start up an experiment and send data in real-time (see the nf-rtime environment)
